@@ -14,7 +14,7 @@
 			<key>CFBundleTypeIconFile</key>
 			<string></string>
 			<key>CFBundleTypeName</key>
-			<string>DocumentType</string>
+			<string>ArsDocumentType</string>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>????</string>
@@ -22,7 +22,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>NSDocumentClass</key>
-			<string>$(PRODUCT_MODULE_NAME).Document</string>
+			<string>$(PRODUCT_MODULE_NAME).ArsDocument</string>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
@@ -30,7 +30,7 @@
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
-	<string>net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -43,6 +43,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.graphics-design</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
