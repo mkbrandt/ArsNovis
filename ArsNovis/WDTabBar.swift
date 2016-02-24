@@ -11,8 +11,7 @@ import Cocoa
 class WDResizableTextField: NSTextField, NSTextFieldDelegate
 {
     
-    override init(frame: CGRect)
-    {
+    override init(frame: CGRect) {
         super.init(frame: frame)
         delegate = self
     }
@@ -21,16 +20,14 @@ class WDResizableTextField: NSTextField, NSTextFieldDelegate
         super.init(coder: coder)
     }
     
-    override var intrinsicContentSize: NSSize
-    {
+    override var intrinsicContentSize: NSSize {
         let text = attributedStringValue
         let size = CGSize(width: text.size().width + 12, height: text.size().height)
         
         return size
     }
     
-    override func controlTextDidChange(obj: NSNotification)
-    {
+    override func controlTextDidChange(obj: NSNotification) {
         invalidateIntrinsicContentSize()
     }
 }
@@ -50,14 +47,12 @@ class WDTabBarButton: NSView
     var label: NSTextField!
     var delegate: WDTabBarButtonDelegate?
     
-    var selected: Bool
-        {
+    var selected: Bool {
         get { return _selected }
         set { _selected = newValue; needsDisplay = true }
     }
     
-    override init(frame frameRect: CGRect)
-    {
+    override init(frame frameRect: CGRect) {
         super.init(frame: frameRect)
         let textFrame = NSInsetRect(bounds, 10, 5)
         label = WDResizableTextField(frame: textFrame)
@@ -86,22 +81,18 @@ class WDTabBarButton: NSView
         super.init(coder: coder)
     }
     
-    @IBAction func checkSize(sender: NSObject)
-    {
+    @IBAction func checkSize(sender: NSObject) {
         needsUpdateConstraints = true
     }
     
-    @IBAction func endEditing(sender: NSObject)
-    {
-        if label.editable
-        {
+    @IBAction func endEditing(sender: NSObject) {
+        if label.editable {
             label.editable = false
             delegate?.didEndEditingTab?(self)
         }
     }
     
-    override var intrinsicContentSize: NSSize
-    {
+    override var intrinsicContentSize: NSSize {
         let text = label.stringValue as NSString
         var size = text.sizeWithAttributes([:])
         
@@ -110,8 +101,7 @@ class WDTabBarButton: NSView
         return size
     }
     
-    override func drawRect(dirtyRect: CGRect)
-    {
+    override func drawRect(dirtyRect: CGRect) {
         super.drawRect(dirtyRect)
         
         let fill = selected ? NSGradient(startingColor: NSColor.whiteColor(), endingColor: NSColor.lightGrayColor())
@@ -126,19 +116,14 @@ class WDTabBarButton: NSView
     
     override func mouseDown(theEvent: NSEvent)
     {
-        if theEvent.clickCount == 2
-        {
-            if delegate?.shouldBeginEditingTab(self) != nil
-            {
+        if theEvent.clickCount == 2 {
+            if delegate?.shouldBeginEditingTab(self) != nil {
                 label.editable = true
                 label.selectText(self)
                 delegate?.didBeginEditingTab?(self)
             }
-        }
-        else
-        {
-            if (delegate?.shouldSelectTab(self) != nil)
-            {
+        } else {
+            if (delegate?.shouldSelectTab(self) != nil) {
                 selected = true
                 delegate?.didSelectTab?(self)
             }
@@ -160,33 +145,28 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
     var buttonLayouts: [NSLayoutConstraint] = []
     var delegate: WDTabBarDelegate?
     
-    override init(frame: CGRect)
-    {
+    override init(frame: CGRect) {
         tabs = []
         buttonLayouts = []
         super.init(frame: frame)
         translatesAutoresizingMaskIntoConstraints = false
     }
     
-    required init?(coder: NSCoder)
-    {
+    required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
     
-    override func drawRect(dirtyRect: CGRect)
-    {
+    override func drawRect(dirtyRect: CGRect) {
         super.drawRect(dirtyRect)
         
         NSColor.grayColor().set()
         NSRectFill(bounds)
     }
     
-    func rejiggerConstraints()
-    {
+    func rejiggerConstraints() {
         removeConstraints(buttonLayouts)
         buttonLayouts = []
-        if tabs.count > 0
-        {
+        if tabs.count > 0 {
             let tab = tabs[0]
             
             let leftAlign = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.Left, relatedBy: NSLayoutRelation.Equal,
@@ -202,8 +182,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
             buttonLayouts.append(centers)
         }
         
-        for var i = 1; i < tabs.count; ++i
-        {
+        for var i = 1; i < tabs.count; ++i {
             let tab = tabs[i]
             let prev = tabs[i - 1]
             
@@ -221,8 +200,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         }
     }
     
-    func addTabWithName(name: String)
-    {
+    func addTabWithName(name: String) {
         let tab = WDTabBarButton(frame: CGRect(x: 0, y: 0, width: 80, height: 30))
         
         tab.label.stringValue = name
@@ -232,25 +210,20 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         rejiggerConstraints()
     }
     
-    func selectLastTab()
-    {
+    func selectLastTab() {
         tabs[tabs.count - 1].selected = true
     }
     
-    func didSelectTab(aTab: WDTabBarButton)
-    {
-        for tab in tabs
-        {
+    func didSelectTab(aTab: WDTabBarButton) {
+        for tab in tabs {
             if tab != aTab {
                 tab.selected = false
             }
         }
     }
     
-    func indexOfTab(tab: WDTabBarButton) -> Int?
-    {
-        for var i = 0; i < tabs.count; ++i
-        {
+    func indexOfTab(tab: WDTabBarButton) -> Int? {
+        for var i = 0; i < tabs.count; ++i {
             if tabs[i] == tab {
                 return i
             }
@@ -258,10 +231,8 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         return nil
     }
     
-    func shouldBeginEditingTab(tab: WDTabBarButton) -> Bool
-    {
-        if let index = indexOfTab(tab)
-        {
+    func shouldBeginEditingTab(tab: WDTabBarButton) -> Bool {
+        if let index = indexOfTab(tab) {
             if let rv = delegate?.tabBar?(self, shouldRenameTabAtIndex: index) {
                 return rv
             }
@@ -269,19 +240,16 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         return false
     }
     
-    func didBeginEditingTab(tab: WDTabBarButton)
-    {
+    func didBeginEditingTab(tab: WDTabBarButton) {
     }
     
-    func didEndEditingTab(tab: WDTabBarButton)
-    {
+    func didEndEditingTab(tab: WDTabBarButton) {
         if let index = indexOfTab(tab) {
             delegate?.tabBar?(self, didRenameTabAtIndex: index)
         }
     }
     
-    func shouldSelectTab(tab: WDTabBarButton) -> Bool
-    {
+    func shouldSelectTab(tab: WDTabBarButton) -> Bool {
         if let index = indexOfTab(tab) {
             if let rv = delegate?.tabBar?(self, shouldSelectTabAtIndex: index) {
                 return rv

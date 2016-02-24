@@ -11,43 +11,35 @@ import Foundation
 let iota = 0.000000001
 let PI: CGFloat = 3.14159265357
 
-func +(a: CGPoint, b: CGPoint) -> CGPoint
-{
+func +(a: CGPoint, b: CGPoint) -> CGPoint {
     return CGPoint(x: a.x + b.x, y: a.y + b.y)
 }
 
-func -(a: CGPoint, b: CGPoint) -> CGPoint
-{
+func -(a: CGPoint, b: CGPoint) -> CGPoint {
     return CGPoint(x: a.x - b.x, y: a.y - b.y)
 }
 
-func *(b: CGFloat, a: CGPoint) -> CGPoint
-{
+func *(b: CGFloat, a: CGPoint) -> CGPoint {
     return CGPoint(x: a.x * b, y: a.y * b)
 }
 
-func *(a: CGPoint, b: CGFloat) -> CGPoint
-{
+func *(a: CGPoint, b: CGFloat) -> CGPoint {
     return CGPoint(x: a.x * b, y: a.y * b)
 }
 
-func /(a: CGPoint, b: CGFloat) -> CGPoint
-{
+func /(a: CGPoint, b: CGFloat) -> CGPoint {
     return CGPoint(x: a.x / b, y: a.y / b)
 }
 
-func crossProduct(a: CGPoint, _ b: CGPoint) -> CGFloat
-{
+func crossProduct(a: CGPoint, _ b: CGPoint) -> CGFloat {
     return a.x * b.y - a.y * b.x
 }
 
-func dotProduct(a: CGPoint, _ b: CGPoint) -> CGFloat
-{
+func dotProduct(a: CGPoint, _ b: CGPoint) -> CGFloat {
     return a.x * b.x + a.y * b.y
 }
 
-func rectContainingPoints(array: [CGPoint]) -> CGRect
-{
+func rectContainingPoints(array: [CGPoint]) -> CGRect {
     var x_min = CGFloat.infinity
     var x_max = -CGFloat.infinity
     var y_min = CGFloat.infinity
@@ -68,15 +60,13 @@ func rectContainingPoints(array: [CGPoint]) -> CGRect
 
 extension CGPoint
 {
-    init(length: CGFloat, angle: CGFloat)
-    {
+    init(length: CGFloat, angle: CGFloat) {
         let x0 = length * cos(angle)
         let y0 = length * sin(angle)
         self.init(x: x0, y: y0)
     }
     
-    var length: CGFloat
-        {
+    var length: CGFloat {
         get { return sqrt(x * x + y * y) }
         set {
             let ratio = newValue / length
@@ -85,8 +75,7 @@ extension CGPoint
         }
     }
     
-    var angle: CGFloat
-        {
+    var angle: CGFloat {
         get { return atan2(y, x) }
         set {
             let len = length
@@ -95,13 +84,11 @@ extension CGPoint
         }
     }
     
-    func distanceToPoint(point: CGPoint) -> CGFloat
-    {
+    func distanceToPoint(point: CGPoint) -> CGFloat {
         return (point - self).length
     }
     
-    mutating func scale(s: CGFloat)
-    {
+    mutating func scale(s: CGFloat) {
         x *= s
         y *= s
     }

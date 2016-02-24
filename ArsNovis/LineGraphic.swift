@@ -37,28 +37,21 @@ class LineGraphic: Graphic
         set { vector = CGPoint(length: vector.length, angle: newValue) }
     }
     
-    override var points: Array<CGPoint> {
-        get { return [origin, endPoint] }
-    }
+    override var points: [CGPoint] { return [origin, endPoint] }
     
-    override var bounds: CGRect {
-        get{ return NSInsetRect(rectContainingPoints([origin, origin + vector]), -lineWidth, -lineWidth) }
-    }
+    override var bounds: CGRect { return NSInsetRect(rectContainingPoints([origin, origin + vector]), -lineWidth, -lineWidth) }
     
-    required override init(origin: CGPoint)
-    {
+    required override init(origin: CGPoint) {
         vector = CGPoint(x: 1, y: 1)
         super.init(origin: origin)
     }
     
-    init(origin: CGPoint, vector: CGPoint)
-    {
+    init(origin: CGPoint, vector: CGPoint) {
         self.vector = vector
         super.init(origin: origin)
     }
     
-    init(origin: CGPoint, endPoint: CGPoint)
-    {
+    init(origin: CGPoint, endPoint: CGPoint) {
         vector = endPoint - origin
         super.init(origin: origin)
     }
@@ -151,8 +144,7 @@ class LineGraphic: Graphic
         return nil
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint
-    {
+    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
         let v2 = point - origin;
         
         let len = dotProduct(vector, v2) / vector.length
@@ -172,23 +164,20 @@ class LineGraphic: Graphic
         return origin + v;
     }
     
-    override func distanceToPoint(p: CGPoint, extended: Bool = false) -> CGFloat
-    {
+    override func distanceToPoint(p: CGPoint, extended: Bool = false) -> CGFloat {
         let v = closestPointToPoint(p, extended: extended)
         
         return (p - v).length
     }
     
-    override func inspectionKeys() -> [String]
-    {
+    override func inspectionKeys() -> [String] {
         var keys = super.inspectionKeys()
         
         keys += ["length", "angle"]
         return keys
     }
     
-    override func transformerForKey(key: String) -> NSValueTransformer
-    {
+    override func transformerForKey(key: String) -> NSValueTransformer {
         if key == "angle" {
             return AngleTransformer()
         }
@@ -202,18 +191,15 @@ class LineTool: GraphicTool
         return NSCursor.crosshairCursor()
     }
     
-    override func selectTool(view: DrawingView)
-    {
+    override func selectTool(view: DrawingView) {
         view.setDrawingHint("Drawing Lines")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDown(location: CGPoint, view: DrawingView) {
         view.construction = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
         if let lg = view.construction as? LineGraphic {
             view.redrawConstruction()
             

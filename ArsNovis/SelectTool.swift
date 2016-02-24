@@ -27,31 +27,23 @@ class SelectTool: GraphicTool
     var selectedGraphic: Graphic?
     var restoreOnMove = false
     
-    override func selectTool(view: DrawingView)
-    {
+    override func selectTool(view: DrawingView) {
         view.setDrawingHint("Select objects")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDown(location: CGPoint, view: DrawingView) {
         mode = SelectionMode.Select
         restoreOnMove = false
         selectOrigin = location
-        if let g = view.closestGraphicToPoint(location, within: SELECT_RADIUS)
-        {
+        if let g = view.closestGraphicToPoint(location, within: SELECT_RADIUS) {
             mode = SelectionMode.MoveSelected
-            if view.selection.count == 0 || !view.selection.contains(g)
-            {
+            if view.selection.count == 0 || !view.selection.contains(g) {
                 view.selection = [g]
                 view.setNeedsDisplayInRect(view.bounds)
-            }
-            else if view.selection.count == 1
-            {
-                for var i = 0; i < g.points.count; ++i
-                {
+            } else if view.selection.count == 1 {
+                for var i = 0; i < g.points.count; ++i {
                     let p = g.points[i]
-                    if p.distanceToPoint(location) < HSIZE
-                    {
+                    if p.distanceToPoint(location) < HSIZE {
                         selectedGraphic = g
                         selectedHandle = i
                         mode = SelectionMode.MoveHandle
@@ -68,16 +60,14 @@ class SelectTool: GraphicTool
         let delta = location - selectOrigin
         selectOrigin = location
         
-        switch mode
-        {
+        switch mode {
         case SelectionMode.Select:
             view.selectionRect = rectContainingPoints([selectOrigin, location])
             view.selectObjectsInRect(view.selectionRect)
             view.setNeedsDisplayInRect(view.bounds)
             
         case SelectionMode.MoveSelected:
-            for g in view.selection
-            {
+            for g in view.selection {
                 view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -HSIZE, -HSIZE))
                 moveGraphic(g, byVector: delta, inView: view)
                 view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -HSIZE, -HSIZE))
@@ -91,36 +81,28 @@ class SelectTool: GraphicTool
         restoreOnMove = false
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView)
-    {
+    override func mouseMoved(location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView)
-    {
-        if mode == SelectionMode.Select
-        {
+    override func mouseUp(location: CGPoint, view: DrawingView) {
+        if mode == SelectionMode.Select {
             view.selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
             view.selectObjectsInRect(rectContainingPoints([selectOrigin, location]))
             view.setNeedsDisplayInRect(view.bounds)
-        }
-        else
-        {
+        } else {
             mouseDragged(location, view: view)
         }
     }
     
-    func moveGraphic(graphic: Graphic, toPoint point: CGPoint, inView view: DrawingView)
-    {
+    func moveGraphic(graphic: Graphic, toPoint point: CGPoint, inView view: DrawingView) {
         view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
         view.undoManager?.prepareWithInvocationTarget(self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
         graphic.moveOriginTo(point)
         view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
     }
     
-    func moveGraphic(graphic: Graphic, byVector vector: CGPoint, inView view: DrawingView)
-    {
-        if restoreOnMove
-        {
+    func moveGraphic(graphic: Graphic, byVector vector: CGPoint, inView view: DrawingView) {
+        if restoreOnMove {
             view.undoManager?.prepareWithInvocationTarget(self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
         }
         graphic.moveOriginBy(vector)
@@ -128,8 +110,7 @@ class SelectTool: GraphicTool
     
     func setPoint(point: CGPoint, atIndex index: Int, forGraphic graphic: Graphic, inView view: DrawingView)
     {
-        if restoreOnMove
-        {
+        if restoreOnMove {
             let oldLocation = graphic.points[index]
             view.undoManager?.prepareWithInvocationTarget(self).setPoint(oldLocation, atIndex: index, forGraphic: graphic, inView: view)
         }

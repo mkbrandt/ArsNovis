@@ -21,39 +21,30 @@ class RectGraphic: Graphic
         }
     }
     
-    override var bounds: CGRect
-        {
-        get { return NSInsetRect(CGRect(origin: origin, size: size), -lineWidth, -lineWidth) }
-    }
+    override var bounds: CGRect { return NSInsetRect(CGRect(origin: origin, size: size), -lineWidth, -lineWidth) }
     
-    required override init(origin: CGPoint)
-    {
+    required override init(origin: CGPoint) {
         size = NSSize(width: 0, height: 0)
         super.init(origin: origin)
     }
     
-    init(origin: CGPoint, size: NSSize)
-    {
+    init(origin: CGPoint, size: NSSize) {
         self.size = size
         super.init(origin: origin)
     }
     
-    required init?(coder decoder: NSCoder)
-    {
+    required init?(coder decoder: NSCoder) {
         size = decoder.decodeSizeForKey("size")
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder)
-    {
+    override func encodeWithCoder(coder: NSCoder) {
         super.encodeWithCoder(coder)
         coder.encodeSize(size, forKey: "size")
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int)
-    {
-        switch index
-        {
+    override func setPoint(point: CGPoint, atIndex index: Int) {
+        switch index {
         case 0:
             size.width -= point.x - origin.x
             size.height -= point.y - origin.y
@@ -82,8 +73,7 @@ class RectGraphic: Graphic
         return top.snapCursor(location) ?? left.snapCursor(location) ?? bottom.snapCursor(location) ?? right.snapCursor(location)
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint
-    {
+    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
         let top = LineGraphic(origin: origin, vector: CGPoint(x: size.width, y: 0))
         let left = LineGraphic(origin: origin, vector: CGPoint(x: 0, y: size.height))
         let right = LineGraphic(origin: top.endPoint, vector: CGPoint(x: 0, y: size.height))
@@ -116,19 +106,16 @@ class RectTool: GraphicTool
         return NSCursor.crosshairCursor()
     }
     
-    override func selectTool(view: DrawingView)
-    {
+    override func selectTool(view: DrawingView) {
         view.setDrawingHint("Drawing Rectangles")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDown(location: CGPoint, view: DrawingView) {
         startPoint = location
         view.construction = RectGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
         let r = rectContainingPoints([startPoint, location])
         if let rg = view.construction as? RectGraphic {
             view.redrawConstruction()

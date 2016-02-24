@@ -15,61 +15,51 @@ class DistanceTransformer: NSValueTransformer
     var feet_inches_RE: NSRegularExpression
     var mm_RE: NSRegularExpression
 
-    override init()
-    {
+    override init() {
         inches_RE = try! NSRegularExpression(pattern: "(.*)(\")", options: NSRegularExpressionOptions())
         feet_inches_RE = try! NSRegularExpression(pattern: "(.*)'\\s*(.*)\"?", options: NSRegularExpressionOptions())
         mm_RE = try! NSRegularExpression(pattern: "(.*)mm", options: NSRegularExpressionOptions())
         super.init()
     }
     
-    override class func allowsReverseTransformation() -> Bool
-    {
+    override class func allowsReverseTransformation() -> Bool {
         return true
     }
     
-    override func transformedValue(value: AnyObject?) -> AnyObject?
-    {
-        if let n = value as? NSNumber
-        {
+    override func transformedValue(value: AnyObject?) -> AnyObject? {
+        if let n = value as? NSNumber {
             var v = n.doubleValue
             
             switch defaultUnits {
-                case "in":
-                    v /= 100.0
-                    return NSString(format: "%0.6g\"", v)
-                case "ft":
-                    v /= 100.0
-                    let ft = Int(v) / 12
-                    let inches = v - Double(ft) * 12.0
-                    if ft > 0 {
-                        return NSString(format: "%d'%0.6g\"", ft, inches)
-                    } else {
-                        return NSString(format: "%0.6g\"", inches)
-                    }
-                case "mm":
-                    v /= 100.0 / 25.4
-                    return NSString(format: "%0.6gmm", v)
-                default:
-                    return "\(v)pt"
+            case "in":
+                v /= 100.0
+                return NSString(format: "%0.6g\"", v)
+            case "ft":
+                v /= 100.0
+                let ft = Int(v) / 12
+                let inches = v - Double(ft) * 12.0
+                if ft > 0 {
+                    return NSString(format: "%d'%0.6g\"", ft, inches)
+                } else {
+                    return NSString(format: "%0.6g\"", inches)
+                }
+            case "mm":
+                v /= 100.0 / 25.4
+                return NSString(format: "%0.6gmm", v)
+            default:
+                return "\(v)pt"
             }
-        }
-        else
-        {
+        } else {
             return "-0"
         }
     }
     
-    override func reverseTransformedValue(value: AnyObject?) -> AnyObject?
-    {
-        if let s = value as? NSString
-        {
+    override func reverseTransformedValue(value: AnyObject?) -> AnyObject? {
+        if let s = value as? NSString {
             let all = NSMakeRange(0, s.length)
-            if 0 < feet_inches_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all)
-            {
+            if 0 < feet_inches_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all) {
                 let m = feet_inches_RE.firstMatchInString(s as String, options: NSMatchingOptions(), range: all)
-                if let r = m?.rangeAtIndex(1)
-                {
+                if let r = m?.rangeAtIndex(1) {
                     let sn: NSString = s.substringWithRange(r)
                     let feet = sn.doubleValue
                     let r2 = m!.rangeAtIndex(2)
@@ -77,8 +67,7 @@ class DistanceTransformer: NSValueTransformer
                     return (feet * 12 + sn2.doubleValue) * 100.0
                 }
             }
-            if 0 < inches_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all)
-            {
+            if 0 < inches_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all) {
                 let m = inches_RE.firstMatchInString(s as String, options: NSMatchingOptions(), range: all)
                 if let r = m?.rangeAtIndex(1)
                 {
@@ -86,8 +75,7 @@ class DistanceTransformer: NSValueTransformer
                     return sn.doubleValue * 100.0
                 }
             }
-            if 0 < mm_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all)
-            {
+            if 0 < mm_RE.numberOfMatchesInString(s as String, options: NSMatchingOptions(), range: all) {
                 let m = mm_RE.firstMatchInString(s as String, options: NSMatchingOptions(), range: all)
                 if let r = m?.rangeAtIndex(1)
                 {
@@ -97,16 +85,14 @@ class DistanceTransformer: NSValueTransformer
             }
             
             switch defaultUnits {
-                case "ft", "in":
-                    return s.doubleValue * 100.0
-                case "mm":
-                    return s.doubleValue * 100 / 25.4
-                default:
-                    return s.doubleValue
+            case "ft", "in":
+                return s.doubleValue * 100.0
+            case "mm":
+                return s.doubleValue * 100 / 25.4
+            default:
+                return s.doubleValue
             }
-        }
-        else
-        {
+        } else {
             return 0
         }
     }
@@ -137,13 +123,11 @@ class GraphicInspector: NSView
     var selection: Graphic?
     var info: [String:(NSTextField, NSValueTransformer, NSTextField)] = [:]
     
-    override func drawRect(dirtyRect: CGRect)
-    {
+    override func drawRect(dirtyRect: CGRect) {
         NSEraseRect(dirtyRect)
     }
     
-    func removeAllSubviews()
-    {
+    func removeAllSubviews() {
         for key in info.keys {
             if let (field, _, label) = info[key] {
                 label.removeFromSuperview()
@@ -153,8 +137,7 @@ class GraphicInspector: NSView
         info = [:]
     }
     
-    @IBAction func fieldChanged(sender: AnyObject)
-    {
+    @IBAction func fieldChanged(sender: AnyObject) {
         NSLog("field changed: \(sender)\n")
         for (key, (field, xfrm, _)) in info {
             if field == sender as! NSTextField {
@@ -169,8 +152,7 @@ class GraphicInspector: NSView
         }
     }
     
-    func beginInspection(graphic: Graphic)
-    {
+    func beginInspection(graphic: Graphic) {
         self.selection = graphic
         let keys = graphic.inspectionKeys()
         

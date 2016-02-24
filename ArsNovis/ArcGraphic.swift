@@ -63,7 +63,7 @@ class ArcGraphic: Graphic
         }
     }
     
-    override var points: Array<CGPoint> { return [origin, midPoint, endPoint] }
+    override var points: [CGPoint] { return [origin, midPoint, endPoint] }
     
     override var bounds: CGRect {
         get {
@@ -125,8 +125,7 @@ class ArcGraphic: Graphic
         
         if dist > radius {
             return []
-        }
-        else if dist == radius {
+        } else if dist == radius {
             points = [p]
         } else {
             let d2 = sqrt(radius * radius - dist * dist)
@@ -145,8 +144,7 @@ class ArcGraphic: Graphic
         return intersections
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int)
-    {
+    override func setPoint(point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             origin = point
@@ -193,8 +191,7 @@ class ArcGraphic: Graphic
         return nil
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint
-    {
+    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
         let a = (point - center).angle
         let p = CGPoint(length: radius, angle: a) + center
         
@@ -211,8 +208,7 @@ class ArcGraphic: Graphic
         return endPoint
     }
     
-    override func distanceToPoint(point: CGPoint, extended: Bool) -> CGFloat
-    {
+    override func distanceToPoint(point: CGPoint, extended: Bool) -> CGFloat {
         let d = super.distanceToPoint(point, extended: extended)
         return d
     }
@@ -226,17 +222,14 @@ class Arc3PtTool: GraphicTool
         return NSCursor.crosshairCursor()
     }
     
-    override func selectTool(view: DrawingView)
-    {
+    override func selectTool(view: DrawingView) {
         state = 0
         view.setDrawingHint("3 Point Arc: Select start point")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDown(location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
-        switch state
-        {
+        switch state {
         case 0:
             view.construction = ArcGraphic(origin: location)
         case 1:
@@ -251,12 +244,10 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView)
-    {
+    override func mouseMoved(location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         if let ag = view.construction as? ArcGraphic {
-            switch state
-            {
+            switch state {
             case 0:
                 break
             case 1:
@@ -268,12 +259,10 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView)
-    {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         
-        switch state
-        {
+        switch state {
         case 0:
             state = 1
             fallthrough
@@ -284,11 +273,9 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView)
-    {
+    override func mouseUp(location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
-        switch state
-        {
+        switch state {
         case 0:
             state = 1
             view.setDrawingHint("3 Point Arc: Select end point")
