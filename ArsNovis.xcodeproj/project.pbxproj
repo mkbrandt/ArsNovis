@@ -22,6 +22,7 @@
 		7AC321921A72B6B700836590 /* RectGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC321911A72B6B700836590 /* RectGraphic.swift */; };
 		7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC321931A72B73100836590 /* ArcGraphic.swift */; };
 		7AC321961A72B75E00836590 /* SelectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC321951A72B75E00836590 /* SelectTool.swift */; };
+		7ACABEC21C7E6EC500BBEA93 /* ZoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +55,7 @@
 		7AC321911A72B6B700836590 /* RectGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RectGraphic.swift; sourceTree = "<group>"; };
 		7AC321931A72B73100836590 /* ArcGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ArcGraphic.swift; sourceTree = "<group>"; };
 		7AC321951A72B75E00836590 /* SelectTool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTool.swift; sourceTree = "<group>"; };
+		7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ZoomView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +109,7 @@
 				7AC321951A72B75E00836590 /* SelectTool.swift */,
 				7AC3218D1A72B4B900836590 /* WDTabBar.swift */,
 				7A3943481A70359B00E1FD94 /* GraphicOperations.swift */,
+				7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */,
 				7A39432B1A700FF700E1FD94 /* Images.xcassets */,
 				7A39432D1A700FF700E1FD94 /* MainMenu.xib */,
 				7A3943221A700FF700E1FD94 /* Supporting Files */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */,
+				7ACABEC21C7E6EC500BBEA93 /* ZoomView.swift in Sources */,
 				7AC321921A72B6B700836590 /* RectGraphic.swift in Sources */,
 				7AC321901A72B54200836590 /* Graphic.swift in Sources */,
 				7A3943491A70359B00E1FD94 /* GraphicOperations.swift in Sources */,
@@ -376,12 +380,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ArsNovis/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
@@ -389,6 +395,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ArsNovis/Info.plist;

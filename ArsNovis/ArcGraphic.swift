@@ -10,7 +10,9 @@ import Cocoa
 
 class ArcGraphic: Graphic
 {
-    var midPoint: CGPoint
+    var midPoint: CGPoint {
+        didSet { cachedPath = nil }
+    }
     
     var endPoint: CGPoint {
         didSet {
@@ -22,6 +24,7 @@ class ArcGraphic: Graphic
                 let v2 = CGPoint(length: r, angle: a)
                 midPoint = midPoint + v2
             }
+            cachedPath = nil
         }
     }
     
@@ -63,21 +66,15 @@ class ArcGraphic: Graphic
         }
     }
     
-    override var points: [CGPoint] { return [origin, midPoint, endPoint] }
+    override var points: Array<CGPoint> { return [origin, midPoint, endPoint] }
     
     override var bounds: CGRect {
         get {
-            let cachedPath = NSBezierPath()
-            cachedPath.lineWidth = lineWidth
-            
-            let r = radius
-            let a = (origin - center).angle * 180.0 / PI
-            let b = (endPoint - center).angle * 180.0 / PI
-            
-            cachedPath.moveToPoint(origin)
-            cachedPath.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
-            let bound = cachedPath.bounds
-            return NSInsetRect(bound, -lineWidth, -lineWidth)
+            if cachedPath == nil {
+                recache()
+            }
+            let b = cachedPath!.bounds
+            return NSInsetRect(b, -lineWidth, -lineWidth)
         }
     }
     
@@ -125,7 +122,8 @@ class ArcGraphic: Graphic
         
         if dist > radius {
             return []
-        } else if dist == radius {
+        }
+        else if dist == radius {
             points = [p]
         } else {
             let d2 = sqrt(radius * radius - dist * dist)
@@ -144,7 +142,8 @@ class ArcGraphic: Graphic
         return intersections
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(point: CGPoint, atIndex index: Int)
+    {
         switch index {
         case 0:
             origin = point
@@ -211,6 +210,18 @@ class ArcGraphic: Graphic
     override func distanceToPoint(point: CGPoint, extended: Bool) -> CGFloat {
         let d = super.distanceToPoint(point, extended: extended)
         return d
+    }
+    
+    override func recache() {
+        cachedPath = NSBezierPath()
+        cachedPath!.lineWidth = lineWidth
+        
+        let r = radius
+        let a = (origin - center).angle * 180.0 / PI
+        let b = (endPoint - center).angle * 180.0 / PI
+        
+        cachedPath!.moveToPoint(origin)
+        cachedPath!.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
     }
 }
 

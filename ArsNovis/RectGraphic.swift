@@ -63,7 +63,14 @@ class RectGraphic: Graphic
             break
         }
     }
-        
+    
+    override func recache()
+    {
+        cachedPath = NSBezierPath()
+        cachedPath!.lineWidth = lineWidth
+        cachedPath!.appendBezierPathWithRect(CGRect(origin: origin, size: size))
+    }
+   
     override func snapCursor(location: CGPoint) -> SnapResult? {
         let top = LineGraphic(origin: origin, vector: CGPoint(x: size.width, y: 0))
         let left = LineGraphic(origin: origin, vector: CGPoint(x: 0, y: size.height))

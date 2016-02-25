@@ -11,7 +11,7 @@ import Cocoa
 let HSIZE: CGFloat = 6.0
 let SELECT_RADIUS: CGFloat = 3.0
 
-class DrawingView: NSView
+class DrawingView: ZoomView
 {
     @IBOutlet var hintField: NSTextField?
     @IBOutlet var inspector: GraphicInspector?      { didSet { inspector?.view = self }}
@@ -29,9 +29,7 @@ class DrawingView: NSView
     }
     
     var selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
-    
-    var scale = CGFloat(1.0)
-    
+
     var construction: Graphic? {
         didSet {
             if let g = construction {
@@ -94,7 +92,8 @@ class DrawingView: NSView
         let maxbound = max(b.size.width * 2, b.size.height * 3)
         b.size.width = maxbound / 2
         b.size.height = maxbound / 3
-        bounds = b
+        Swift.print("Frame set to \(b)")
+        frame = b
     }
     
     override var intrinsicContentSize: CGSize {
