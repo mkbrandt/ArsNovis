@@ -10,11 +10,12 @@ import Cocoa
 
 let ELGraphicUTI = "graphic.walkingdog.com"
 
+var RawSnapRadius = CGFloat(6.0)
 var SnapRadius = CGFloat(6.0)
 
 enum SnapType
 {
-    case EndPoint, On, Center, Horizontal, Vertical, Angle, Grid
+    case EndPoint, On, Center, Horizontal, Vertical, Angle, Align, Intersection, Grid
 }
 
 struct SnapResult
@@ -34,7 +35,11 @@ struct SnapResult
         case .Vertical:
             return "V"
         case .Angle:
-            return "A"
+            return "45°"
+        case .Align:
+            return "Align"
+        case .Intersection:
+            return "Intersect"
         case .Grid:
             return ""
         }
@@ -47,6 +52,8 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     var lineColor = NSColor.blackColor()
     var fillColor: NSColor?
     var cachedPath: NSBezierPath?
+    
+    var isConstruction: Bool { return false }       // return true when this graphic is a temporary construction line
     
     var origin: CGPoint {
         willSet {
@@ -64,6 +71,16 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         didSet { cachedPath = nil }
     }
     
+    var path: NSBezierPath {
+        if cachedPath == nil {
+            recache()
+        }
+        if let p = cachedPath {
+            return p
+        }
+        return NSBezierPath()
+    }
+    
     var inspector: GraphicInspector?
     
     var nestedGraphics: [Graphic]?
@@ -76,6 +93,8 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         {
         get { return CGRect(origin: origin, size: NSSize(width: 0.0, height: 0.0)) }
     }
+    
+    override var description: String { return "Graphic @ \(origin)" }
     
     init(origin: CGPoint)
     {
@@ -104,10 +123,8 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     // Pasteboard
     
-    convenience required init(pasteboardPropertyList propertyList: AnyObject, ofType type: String)
-    {
-        let decoder = NSKeyedUnarchiver(forReadingWithData: propertyList as! NSData)
-        self.init(coder: decoder)!
+    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        return nil
     }
     
     func writableTypesForPasteboard(pasteboard: NSPasteboard) -> [String]
@@ -120,9 +137,14 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return [ELGraphicUTI]
     }
     
+    class func readingOptionsForType(type: String, pasteboard: NSPasteboard) -> NSPasteboardReadingOptions {
+        return NSPasteboardReadingOptions.AsKeyedArchive
+    }
+    
     func pasteboardPropertyListForType(type: String) -> AnyObject?
     {
-        return NSKeyedArchiver.archivedDataWithRootObject(self)
+        let data = NSKeyedArchiver.archivedDataWithRootObject(self)
+        return data
     }
     
     // KVC
@@ -203,16 +225,31 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     }
     
     /// Utility function to draw a filled point as a 4 pixel rect.
-    func drawPoint(point: CGPoint)
+    func drawPoint(point: CGPoint, size: CGFloat)
     {
-        NSRectFill(CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4))
+        NSRectFill(CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size))
+    }
+    
+    func addObserverPoints(points: [CGPoint], color: NSColor?) {
+        if nestedGraphics == nil {
+            nestedGraphics = []
+        }
+        nestedGraphics? += points.map { let g = Graphic(origin: $0); g.fillColor = color; return g }
+    }
+    
+    func drawHandlesInView(view: DrawingView) {
+        let size = view.scaleFloat(HSIZE)
+        
+        for p in points {
+            drawPoint(p, size: size)
+        }
     }
     
     /// Draw the graphic
     ///
     /// Draws the currently cached path.
     /// The default implementation should normally be sufficient. Override recache instead of drawing directly.
-    func draw()
+    func drawInView(view: DrawingView)
     {
         if cachedPath == nil
         {
@@ -225,12 +262,13 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
             cachedPath?.fill()
         }
         lineColor.set()
+        cachedPath?.lineWidth = view.scaleFloat(lineWidth)
         cachedPath?.stroke()
         
         if let nested = nestedGraphics
         {
             for g in nested {
-                g.draw()
+                g.drawInView(view)
             }
         }
     }
@@ -252,6 +290,9 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     /// - returns: the closest point on the graphic to the reference point
     func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint
     {
+        if let bp = BezierGraphic(path: path) {
+            return bp.closestPointToPoint(point, extended: extended)
+        }
         return origin
     }
     
@@ -267,6 +308,31 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return p.distanceToPoint(point)
     }
     
+    func intersectsWithGraphic(g: Graphic) -> Bool {
+        return intersectionsWithGraphic(g).count > 0
+    }
+    
+    func simpleIntersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+        if let bp = BezierGraphic(path: path) {
+            return bp.intersectionsWithGraphic(g)
+        }
+        return []
+    }
+    
+    func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+        return simpleIntersectionsWithGraphic(g)
+    }
+    
+    func closestIntersectionWithGraphic(g: Graphic, toPoint p: CGPoint) -> CGPoint? {
+        let points = intersectionsWithGraphic(g)
+        
+        if points.count == 0 {
+            return nil
+        } else {
+            return points.sort({ $0.distanceToPoint(p) < $1.distanceToPoint(p) })[0]
+        }
+    }
+    
     func snapCursor(location: CGPoint) -> SnapResult? {
         for point in points {
             if point.distanceToPoint(location) < SnapRadius {
@@ -275,10 +341,6 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
         return nil
     }
-    
-    // Printable
-    
-    override var description: String { return "Graphic\(origin)" }    
 }
 
 /// A graphic factory using mouse events

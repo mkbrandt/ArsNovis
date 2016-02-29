@@ -27,7 +27,7 @@ class ArsDocument: NSDocument
 
     override func windowControllerDidLoadNib(aController: NSWindowController)
     {
-        super.windowControllerDidLoadNib(aController)
+        super.windowControllerDidLoadNib(aController)        
     }
 
     override class func autosavesInPlace() -> Bool
@@ -49,5 +49,7 @@ class ArsDocument: NSDocument
     {
         throw NSError(domain: NSOSStatusErrorDomain, code: unimpErr, userInfo: nil)
     }
+    
+    
 }
 

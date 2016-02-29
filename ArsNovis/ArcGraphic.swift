@@ -66,6 +66,8 @@ class ArcGraphic: Graphic
         }
     }
     
+    override var description: String { return "Arc @ \(center), \(radius)" }
+    
     override var points: Array<CGPoint> { return [origin, midPoint, endPoint] }
     
     override var bounds: CGRect {
@@ -103,6 +105,12 @@ class ArcGraphic: Graphic
         super.init(coder: decoder)
     }
     
+    override func encodeWithCoder(aCoder: NSCoder) {
+        super.encodeWithCoder(aCoder)
+        aCoder.encodePoint(midPoint, forKey: "midPoint")
+        aCoder.encodePoint(endPoint, forKey: "endPoint")
+    }
+    
     func pointOnArc(point: CGPoint) -> Bool {
         if point.distanceToPoint(center) > radius + 0.01 {
             //print("point \(point) too far: distance = \(point.distanceToPoint(center)), radius = \(radius)")
@@ -117,7 +125,7 @@ class ArcGraphic: Graphic
     
     func intersectionsWithLine(line: LineGraphic) -> [CGPoint] {
         var points: [CGPoint]
-        let p = line.closestPointToPoint(center, extended: false)
+        let p = line.closestPointToPoint(center, extended: true)
         let dist = p.distanceToPoint(center)
         
         if dist > radius {
@@ -131,7 +139,7 @@ class ArcGraphic: Graphic
             points = [p + v, p - v]
         }
         
-        var intersections = [] as [CGPoint]
+        var intersections: [CGPoint] = []
         
         for point in points {
             if line.pointOnLine(point) && pointOnArc(point) {
@@ -140,6 +148,47 @@ class ArcGraphic: Graphic
         }
         
         return intersections
+    }
+    
+    func intersectionsWithArc(arc: ArcGraphic) -> [CGPoint] {
+        let d = center.distanceToPoint(arc.center)
+        if d == 0 {
+            return []
+        }
+        if d > radius + arc.radius {
+            return []
+        }
+        if d < abs(radius - arc.radius) {
+            return []
+        }
+        
+        var intersections: [CGPoint] = []
+        if center.distanceToPoint(arc.center) == radius + arc.radius {
+            var v = arc.center - center
+            v.length = radius
+            intersections = [center + v]
+        } else {
+            let a = (radius * radius - arc.radius * arc.radius + d * d) / (d * 2)
+            let h = sqrt(radius * radius - a * a)
+            var va = arc.center - center
+            va.length = a
+            let vh = CGPoint(length: h, angle: va.angle + PI / 2)
+            intersections = [center + va + vh, center + va - vh]
+        }
+
+        intersections = intersections.filter { return pointOnArc($0) && arc.pointOnArc($0) }
+        return intersections
+    }
+    
+    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+        if let arc = g as? ArcGraphic {
+            return intersectionsWithArc(arc)
+        } else if let line = g as? LineGraphic {
+            return intersectionsWithLine(line)
+        } else if let rect = g as? RectGraphic {
+            return rect.sides.reduce([], combine: {$0 + intersectionsWithLine($1)})
+        }
+        return []
     }
     
     override func setPoint(point: CGPoint, atIndex index: Int)
@@ -214,14 +263,15 @@ class ArcGraphic: Graphic
     
     override func recache() {
         cachedPath = NSBezierPath()
-        cachedPath!.lineWidth = lineWidth
         
         let r = radius
         let a = (origin - center).angle * 180.0 / PI
         let b = (endPoint - center).angle * 180.0 / PI
         
-        cachedPath!.moveToPoint(origin)
-        cachedPath!.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
+        if let cachedPath = cachedPath {
+            cachedPath.moveToPoint(origin)
+            cachedPath.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
+        }
     }
 }
 

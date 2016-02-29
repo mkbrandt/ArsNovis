@@ -8,7 +8,7 @@
 
 import Foundation
 
-let iota = 0.000000001
+let IOTA: CGFloat = 0.000000001
 let PI: CGFloat = 3.14159265357
 
 func +(a: CGPoint, b: CGPoint) -> CGPoint {
@@ -58,6 +58,19 @@ func rectContainingPoints(array: [CGPoint]) -> CGRect {
     return CGRect(x: x_min, y: y_min, width: x_max - x_min, height: y_max - y_min)
 }
 
+func constrainTo45Degrees(location: CGPoint, relativeToPoint startPoint: CGPoint) -> CGPoint {
+    let delta = location - startPoint
+    let maxoffset = max(abs(delta.x), abs(delta.y))
+    return startPoint + CGPoint(x: sign(delta.x) * maxoffset, y: sign(delta.y) * maxoffset)
+}
+
+func sign(f: CGFloat) -> CGFloat {
+    if f < 0 {
+        return -1
+    }
+    return 1
+}
+
 extension CGPoint
 {
     init(length: CGFloat, angle: CGFloat) {
@@ -92,4 +105,9 @@ extension CGPoint
         x *= s
         y *= s
     }
+}
+
+extension CGRect
+{
+    var center: CGPoint { return CGPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2) }
 }

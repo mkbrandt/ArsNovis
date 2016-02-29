@@ -35,7 +35,8 @@ class SelectTool: GraphicTool
         mode = SelectionMode.Select
         restoreOnMove = false
         selectOrigin = location
-        if let g = view.closestGraphicToPoint(location, within: SELECT_RADIUS) {
+        let radius = view.scaleFloat(SELECT_RADIUS)
+        if let g = view.closestGraphicToPoint(location, within: radius) {
             mode = SelectionMode.MoveSelected
             if view.selection.count == 0 || !view.selection.contains(g) {
                 view.selection = [g]
@@ -57,26 +58,29 @@ class SelectTool: GraphicTool
     
     override func mouseDragged(location: CGPoint, view: DrawingView)
     {
-        let delta = location - selectOrigin
-        selectOrigin = location
+        let handleSize = view.scaleFloat(HSIZE)
         
         switch mode {
         case SelectionMode.Select:
             view.selectionRect = rectContainingPoints([selectOrigin, location])
             view.selectObjectsInRect(view.selectionRect)
-            view.setNeedsDisplayInRect(view.bounds)
+            view.needsDisplay = true
             
         case SelectionMode.MoveSelected:
+            let delta = location - selectOrigin
+            selectOrigin = location
             for g in view.selection {
-                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -HSIZE, -HSIZE))
+                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -handleSize, -handleSize))
                 moveGraphic(g, byVector: delta, inView: view)
-                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -HSIZE, -HSIZE))
+                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -handleSize, -handleSize))
             }
             
         case SelectionMode.MoveHandle:
-            view.setNeedsDisplayInRect(NSInsetRect(selectedGraphic!.bounds, -HSIZE, -HSIZE))
-            setPoint(location, atIndex: selectedHandle, forGraphic: selectedGraphic!, inView: view)
-            view.setNeedsDisplayInRect(NSInsetRect(selectedGraphic!.bounds, -HSIZE, -HSIZE))
+            if let graphic = selectedGraphic {
+                view.setNeedsDisplayInRect(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
+                setPoint(location, atIndex: selectedHandle, forGraphic: graphic, inView: view)
+                view.setNeedsDisplayInRect(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
+            }
         }
         restoreOnMove = false
     }
@@ -95,10 +99,11 @@ class SelectTool: GraphicTool
     }
     
     func moveGraphic(graphic: Graphic, toPoint point: CGPoint, inView view: DrawingView) {
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
+        let handleSize = view.scaleFloat(HSIZE)
+        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
         view.undoManager?.prepareWithInvocationTarget(self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
         graphic.moveOriginTo(point)
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
+        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
     }
     
     func moveGraphic(graphic: Graphic, byVector vector: CGPoint, inView view: DrawingView) {
@@ -110,12 +115,13 @@ class SelectTool: GraphicTool
     
     func setPoint(point: CGPoint, atIndex index: Int, forGraphic graphic: Graphic, inView view: DrawingView)
     {
+        let handleSize = view.scaleFloat(HSIZE)
         if restoreOnMove {
             let oldLocation = graphic.points[index]
             view.undoManager?.prepareWithInvocationTarget(self).setPoint(oldLocation, atIndex: index, forGraphic: graphic, inView: view)
         }
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
+        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
         graphic.setPoint(point, atIndex: index)
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -HSIZE, -HSIZE))
+        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
     }
 }

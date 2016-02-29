@@ -10,7 +10,17 @@ import Cocoa
 
 class RectGraphic: Graphic
 {
-    var size: NSSize
+    var size: NSSize { didSet { cachedPath = nil } }
+    
+    var width: CGFloat {
+        get { return size.width }
+        set { size.width = newValue }
+    }
+    
+    var height: CGFloat {
+        get { return size.height }
+        set { size.height = newValue }
+    }
     
     override var points: [CGPoint] {
         get {
@@ -67,41 +77,74 @@ class RectGraphic: Graphic
     override func recache()
     {
         cachedPath = NSBezierPath()
-        cachedPath!.lineWidth = lineWidth
-        cachedPath!.appendBezierPathWithRect(CGRect(origin: origin, size: size))
+        if let cachedPath = cachedPath {
+            cachedPath.appendBezierPathWithRect(CGRect(origin: origin, size: size))
+        }
+    }
+    
+    var sides: [LineGraphic] {
+        let top = LineGraphic(origin: origin, vector: CGPoint(x: size.width, y: 0))
+        let left = LineGraphic(origin: origin, vector: CGPoint(x: 0, y: size.height))
+        let right = LineGraphic(origin: top.endPoint, vector: CGPoint(x: 0, y: size.height))
+        let bottom = LineGraphic(origin: left.endPoint, endPoint: right.endPoint)
+
+        return [top, left, bottom, right]
+    }
+    
+    override func intersectsWithGraphic(g: Graphic) -> Bool {
+        return sides.reduce(false, combine: { return $0 || $1.intersectsWithGraphic(g) })
+    }
+    
+    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+        
+        return Array(sides.map({ $0.intersectionsWithGraphic(g) }).flatten())
     }
    
     override func snapCursor(location: CGPoint) -> SnapResult? {
-        let top = LineGraphic(origin: origin, vector: CGPoint(x: size.width, y: 0))
-        let left = LineGraphic(origin: origin, vector: CGPoint(x: 0, y: size.height))
-        let right = LineGraphic(origin: top.endPoint, vector: CGPoint(x: 0, y: size.height))
-        let bottom = LineGraphic(origin: left.endPoint, endPoint: right.endPoint)
-        
-        return top.snapCursor(location) ?? left.snapCursor(location) ?? bottom.snapCursor(location) ?? right.snapCursor(location)
+        return sides.reduce(nil, combine: { return $0 ?? $1.snapCursor(location) })
     }
     
     override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
-        let top = LineGraphic(origin: origin, vector: CGPoint(x: size.width, y: 0))
-        let left = LineGraphic(origin: origin, vector: CGPoint(x: 0, y: size.height))
-        let right = LineGraphic(origin: top.endPoint, vector: CGPoint(x: 0, y: size.height))
-        let bottom = LineGraphic(origin: left.endPoint, endPoint: right.endPoint)
+        let points = sides.map { $0.closestPointToPoint(point) }
         
-        let tp = top.closestPointToPoint(point)
-        let lp = left.closestPointToPoint(point)
-        let rp = right.closestPointToPoint(point)
-        let bp = bottom.closestPointToPoint(point)
-        
-        var closest = tp
-        for p in [lp, rp, bp] {
-            if (p - point).length < (closest - point).length {
+        var distance = CGFloat.infinity
+        var closest = CGPoint()
+        for p in points {
+            let dist = p.distanceToPoint(point)
+            if dist < distance {
                 closest = p
+                distance = dist
             }
         }
         return closest
     }
     
-    override var description: String {
-        get { return "RectGraphic(\(origin),\(size))" }
+    override var description: String { return "RectGraphic(\(origin),\(size))" }
+
+    override func inspectionKeys() -> [String] {
+        var keys = super.inspectionKeys()
+        
+        keys += ["width", "height"]
+        return keys
+    }
+}
+
+class ElipseGraphic: RectGraphic
+{
+    override func recache()
+    {
+        cachedPath = NSBezierPath(ovalInRect: CGRect(origin: origin, size: size))
+    }
+    
+    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+        return simpleIntersectionsWithGraphic(g)
+    }
+    
+    override func snapCursor(location: CGPoint) -> SnapResult? {
+        if let bp = BezierGraphic(path: path) {
+            return bp.snapCursor(location)
+        }
+        return nil
     }
 }
 
@@ -122,7 +165,10 @@ class RectTool: GraphicTool
         view.construction = RectGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(var location: CGPoint, view: DrawingView) {
+        if view.shiftKeyDown {
+            location = constrainTo45Degrees(location, relativeToPoint: startPoint)
+        }
         let r = rectContainingPoints([startPoint, location])
         if let rg = view.construction as? RectGraphic {
             view.redrawConstruction()
@@ -132,6 +178,14 @@ class RectTool: GraphicTool
             
             view.redrawConstruction()
         }
+    }
+}
+
+class ElipseTool: RectTool
+{
+    override func mouseDown(location: CGPoint, view: DrawingView) {
+        startPoint = location
+        view.construction = ElipseGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
 }
 
