@@ -16,14 +16,21 @@ class DrawingView: ZoomView
     @IBOutlet var hintField: NSTextField?
     @IBOutlet var inspector: GraphicInspector?      { didSet { inspector?.view = self }}
     
+    var document: ArsDocument!
+    
     var context: CGContext!
     
-    var displayList: [Graphic] = []
+    var displayList: [Graphic] {
+        get { return document.displayList }
+        set { document.displayList = newValue }
+    }
     
     var selection: [Graphic] = [] {
         didSet {
             if selection.count == 1 {
                 inspector?.beginInspection(selection[0])
+            } else {
+                inspector?.removeAllSubviews()
             }
         }
     }
@@ -480,6 +487,8 @@ class DrawingView: ZoomView
         
         switch key
         {
+        case "\t":
+            inspector?.beginEditing()
         case "b":
             tool = BezierTool()
         case "e":

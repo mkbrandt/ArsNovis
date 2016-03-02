@@ -121,11 +121,15 @@ class RectGraphic: Graphic
     
     override var description: String { return "RectGraphic(\(origin),\(size))" }
 
-    override func inspectionKeys() -> [String] {
-        var keys = super.inspectionKeys()
+    override var inspectionKeys: [String] {
+        var keys = super.inspectionKeys
         
         keys += ["width", "height"]
         return keys
+    }
+    
+    override var defaultInspectionKey: String {
+        return "width"
     }
 }
 

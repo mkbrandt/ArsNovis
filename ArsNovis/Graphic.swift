@@ -178,9 +178,12 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     // Inspection
     
-    func inspectionKeys() -> [String]
-    {
+    var inspectionKeys: [String] {
         return ["x", "y"]
+    }
+    
+    var defaultInspectionKey: String {
+        return "x"
     }
     
     func transformerForKey(key: String) -> NSValueTransformer

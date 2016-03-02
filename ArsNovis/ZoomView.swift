@@ -35,12 +35,7 @@ class ZoomView: NSView
     var previousVisibleRect = CGRect()
     
     var centeredPointInDocView: CGPoint {
-        if let clipView = superview as? NSClipView {
-            let clipFrame = clipView.documentVisibleRect
-            
-            return clipFrame.center
-        }
-        return bounds.origin
+        return visibleRect.center
     }
     
     override var intrinsicContentSize: CGSize {
@@ -77,17 +72,6 @@ class ZoomView: NSView
         let sy = visibleRect.size.height / rect.size.height
         zoomByFactor(min(sx, sy))
         scrollRectToVisible(rect)
-    }
-    
-    func zoomViewToRect(rect: CGRect) {
-        if let clipView = superview as? NSClipView {
-            let vr = clipView.documentVisibleRect
-            
-            let sx = vr.size.width / rect.size.width
-            let sy = vr.size.height / rect.size.height
-            let p = rect.center
-            zoomByFactor(min(sx, sy), aroundPoint: p)
-        }
     }
     
     override func scrollWheel(theEvent: NSEvent) {
@@ -147,14 +131,15 @@ class ZoomView: NSView
         }
     }
     
+    override func viewDidEndLiveResize() {
+        zoomByFactor(10)
+        zoomByFactor(0.1)
+    }
+    
     func scrollPointToCenter(center: CGPoint) {
-        if let clipView = superview as? NSClipView {
-            let fr = clipView.documentVisibleRect
-            
-            let x = center.x - fr.size.width / 2
-            let y = center.y - fr.size.height / 2
-            scrollPoint(CGPoint(x: x, y: y))
-        }
+        var rect = visibleRect
+        rect.origin = CGPoint(x: center.x - rect.size.width / 2, y: center.y - rect.size.height / 2)
+        scrollRectToVisible(rect)
     }
     
     override func drawRect(dirtyRect: NSRect) {

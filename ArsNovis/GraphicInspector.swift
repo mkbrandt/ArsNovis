@@ -117,11 +117,12 @@ class AngleTransformer: NSValueTransformer
     }
 }
 
-class GraphicInspector: NSView
+class GraphicInspector: NSView, NSTextFieldDelegate
 {
     var view: DrawingView?
     var selection: Graphic?
     var info: [String:(NSTextField, NSValueTransformer, NSTextField)] = [:]
+    var defaultField: NSTextField?
     
     override func drawRect(dirtyRect: CGRect) {
         NSEraseRect(dirtyRect)
@@ -140,26 +141,34 @@ class GraphicInspector: NSView
     @IBAction func fieldChanged(sender: AnyObject) {
         NSLog("field changed: \(sender)\n")
         for (key, (field, xfrm, _)) in info {
-            if field == sender as! NSTextField {
-                if let val = xfrm.reverseTransformedValue(field.stringValue) as? NSNumber {
-                    if let g = selection {
-                        view?.setNeedsDisplayInRect(g.bounds)
-                        g.setValue(val, forKey: key)
-                        view?.setNeedsDisplayInRect(g.bounds)
+            if let textfield = sender as? NSTextField {
+                if field == textfield {
+                    if let val = xfrm.reverseTransformedValue(field.stringValue) as? NSNumber {
+                        if let g = selection {
+                            view?.setNeedsDisplayInRect(g.bounds)
+                            g.setValue(val, forKey: key)
+                            view?.setNeedsDisplayInRect(g.bounds)
+                        }
                     }
                 }
             }
         }
     }
     
+    func beginEditing() {
+        defaultField?.selectText(self)
+    }
+    
     func beginInspection(graphic: Graphic) {
         self.selection = graphic
-        let keys = graphic.inspectionKeys()
+        let keys = graphic.inspectionKeys
+        let defaultKey = graphic.defaultInspectionKey
         
         removeAllSubviews()
         
         var location = CGPoint(x: 10, y: 3)
         var lastField: NSTextField? = nil
+        var firstField: NSTextField? = nil
         
         for key in keys {
             let aKey = NSAttributedString(string: key)
@@ -177,9 +186,13 @@ class GraphicInspector: NSView
             field.bordered = true
             field.editable = true
             field.target = self
+            field.delegate = self
             field.action = "fieldChanged:"
             lastField?.nextKeyView = field
             lastField = field
+            if firstField == nil {
+                firstField = field
+            }
             self.addSubview(field)
             
             let transformer = graphic.transformerForKey(key)
@@ -189,7 +202,24 @@ class GraphicInspector: NSView
             location.x += 100
             
             field.bind("stringValue", toObject: graphic, withKeyPath: key, options: [NSValueTransformerBindingOption: transformer, NSContinuouslyUpdatesValueBindingOption: true])
-            
+            if key == defaultKey {
+                defaultField = field
+            }
         }
+        lastField?.nextKeyView = firstField
+    }
+
+    func control(control: NSControl, textShouldEndEditing fieldEditor: NSText) -> Bool {
+        fieldChanged(control)
+        return true
+    }
+    
+    func control(control: NSControl, textView: NSTextView, doCommandBySelector commandSelector: Selector) -> Bool {
+        if commandSelector == "insertNewline:" {
+            fieldChanged(control)
+            window?.makeFirstResponder(view)
+            return true
+        }
+        return false
     }
 }

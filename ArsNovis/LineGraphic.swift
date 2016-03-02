@@ -204,11 +204,15 @@ class LineGraphic: Graphic
         return (p - v).length
     }
     
-    override func inspectionKeys() -> [String] {
-        var keys = super.inspectionKeys()
+    override var inspectionKeys: [String] {
+        var keys = super.inspectionKeys
         
         keys += ["length", "angle"]
         return keys
+    }
+    
+    override var defaultInspectionKey: String {
+        return "length"
     }
     
     override func transformerForKey(key: String) -> NSValueTransformer {
