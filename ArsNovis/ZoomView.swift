@@ -8,14 +8,21 @@
 
 import Cocoa
 
+struct ZoomState {
+    var scale: CGFloat
+    var centerPoint: CGPoint
+}
+
 class ZoomView: NSView
 {
     @IBOutlet var widthConstraint: NSLayoutConstraint!
     @IBOutlet var heightConstraint: NSLayoutConstraint!
     
+    var pageRect: CGRect?       { return nil }                // force view bounds to this size if present
     var scale: CGFloat = 1.0
-    var minimumScale: CGFloat = 0.01
+    var minimumScale: CGFloat = 0.0001
     var maximumScale: CGFloat = 100000.0
+    var constrainViewToSuperview = true                         // set to false when printing
     
     var contentRect: CGRect { return CGRect(x: 0, y: 0, width: 0, height: 0) }      // override to always enclose content
     var contentMarginRect: CGRect {
@@ -30,12 +37,27 @@ class ZoomView: NSView
     
     var fixedSize: CGSize = CGSize(width: 1280, height: 1024)
     
+    var fullVisibleRect: CGRect {
+        if let superview = superview {
+            return convertRect(superview.bounds, fromView: superview)
+        }
+        return visibleRect
+    }
+    
     var zoomCenter: CGPoint?
     var lastVisibleRect = CGRect()
     var previousVisibleRect = CGRect()
     
     var centeredPointInDocView: CGPoint {
         return visibleRect.center
+    }
+    
+    var zoomState: ZoomState {
+        get { return ZoomState(scale: scale, centerPoint: centeredPointInDocView) }
+        set {
+            zoomToAbsoluteScale(newValue.scale)
+            scrollPointToCenter(newValue.centerPoint)
+        }
     }
     
     override var intrinsicContentSize: CGSize {
@@ -55,7 +77,11 @@ class ZoomView: NSView
     }
     
     @IBAction func zoomToFit(sender: NSObject) {
-        zoomToFitRect(contentMarginRect)
+        if let pageRect = pageRect {
+            zoomToFitRect(pageRect)
+        } else {
+            zoomToFitRect(contentMarginRect)
+        }
     }
     
     func zoomByFactor(factor: CGFloat) {
@@ -68,15 +94,15 @@ class ZoomView: NSView
     }
     
     func zoomToFitRect(rect: CGRect) {
-        let sx = visibleRect.size.width / rect.size.width
-        let sy = visibleRect.size.height / rect.size.height
+        let sx = fullVisibleRect.size.width / rect.size.width
+        let sy = fullVisibleRect.size.height / rect.size.height
         zoomByFactor(min(sx, sy))
         scrollRectToVisible(rect)
     }
     
     override func scrollWheel(theEvent: NSEvent) {
         if theEvent.modifierFlags.contains(.ControlKeyMask) {
-            let factor: CGFloat = 1.0 - theEvent.deltaY * 0.1
+            let factor: CGFloat = 1.0 - theEvent.deltaY * 0.04
             var mouseloc = convertPoint(theEvent.locationInWindow, fromView: nil)
             
             if let zc = zoomCenter {
@@ -87,6 +113,11 @@ class ZoomView: NSView
         } else {
             super.scrollWheel(theEvent)
         }
+    }
+    
+    func checkViewBoundries() {
+        zoomByFactor(2)
+        zoomByFactor(0.5)
     }
     
     func zoomByFactor(var factor: CGFloat, aroundPoint point: CGPoint) {
@@ -103,23 +134,40 @@ class ZoomView: NSView
                 factor = newScale / scale
             }
             
-            Swift.print("Zoom by \(factor) around \(point)   scale = \(newScale)")
+            //Swift.print("Zoom by \(factor) around \(point)   scale = \(newScale)")
             if newScale != scale {
-                let originVector = (point - visibleRect.origin) / factor
-                let newVisibleSize = CGSize(width: visibleRect.width / factor, height: visibleRect.height / factor)
+                let originVector = (point - fullVisibleRect.origin) / factor
+                let newVisibleSize = CGSize(width: fullVisibleRect.width / factor, height: fullVisibleRect.height / factor)
                 let newVisibleRect = CGRect(origin: point - originVector, size: newVisibleSize)
-                Swift.print("  visible = \(newVisibleRect)")
+                //Swift.print("  visible = \(newVisibleRect)")
                 
                 previousVisibleRect = lastVisibleRect
                 lastVisibleRect = newVisibleRect
                 
                 scale = newScale
                 var newBounds = contentMarginRect
-                newBounds.size.width *= 1.1
-                newBounds.size.height *= 1.1
                 newBounds = newBounds.union(newVisibleRect)
-                Swift.print("  new bounds = \(newBounds)")
-                let newFrame = CGRect(x: 0, y: 0, width: newBounds.size.width * scale, height: newBounds.size.height * scale)
+                if let rect = pageRect {
+                    newBounds = rect
+                }
+                //Swift.print("  new bounds = \(newBounds)")
+                var newFrame = CGRect(x: 0, y: 0, width: newBounds.size.width * scale, height: newBounds.size.height * scale)
+                if let superview = superview where constrainViewToSuperview {
+                    var sy: CGFloat = 1.0
+                    var sx: CGFloat = 1.0
+                    if newFrame.size.height < superview.bounds.size.height {
+                        sy = superview.bounds.size.height / newFrame.size.height
+                    }
+                    if newFrame.size.width < superview.bounds.size.width {
+                        sx = superview.bounds.size.width / newFrame.size.width
+                    }
+                    if sx > 1 && sy > 1 {
+                        let sf = min(sx, sy)
+                        newFrame.size = newFrame.size * sf
+                        scale = newFrame.size.width / newBounds.size.width
+                        Swift.print("scale sticks at \(scale)")
+                    }
+                }
                 fixedSize = newFrame.size
                 invalidateIntrinsicContentSize()
                 frame = newFrame
@@ -127,7 +175,7 @@ class ZoomView: NSView
                 scrollRectToVisible(newVisibleRect)
                setNeedsDisplayInRect(bounds)
             }
-            Swift.print("  scale is \(scale)\n  bounds is \(bounds)\n  frame is \(frame)")
+           // Swift.print("  scale is \(scale)\n  bounds is \(bounds)\n  frame is \(frame)")
         }
     }
     

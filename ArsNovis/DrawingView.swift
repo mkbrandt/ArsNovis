@@ -20,6 +20,15 @@ class DrawingView: ZoomView
     
     var context: CGContext!
     
+    override var pageRect: CGRect? {
+        if let rect = document.page.pageRect {
+            let size = rect.size * (100 / document.page.pageScale)
+            return CGRect(origin: rect.origin, size: size)
+        } else {
+            return nil
+        }
+    }
+    
     var displayList: [Graphic] {
         get { return document.displayList }
         set { document.displayList = newValue }
@@ -36,17 +45,11 @@ class DrawingView: ZoomView
     }
     
     override var contentRect: CGRect {
-        var r = CGRect()
         if displayList.count == 0 {
             return CGRect(x: 0, y: 0, width: 90 * 17, height: 90 * 11)
         } else {
-            r = displayList[0].bounds
+            return displayList.reduce(CGRect(), combine: { return $0 + $1.bounds })
         }
-        
-        for g in displayList {
-            r = r.union(g.bounds)
-        }
-        return r
     }
     
     var selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
@@ -64,7 +67,10 @@ class DrawingView: ZoomView
     var tool: GraphicTool = LineTool() {
         didSet { selection = [] }
     }
-    var gridSnap = false
+    var gridSnap: Bool      {
+        get { return document.layer.snapToGrid }
+        set { document.layer.snapToGrid = newValue }
+    }
     var cursorNote = ""
     var snappedCursor: SnapResult?
     
@@ -113,7 +119,7 @@ class DrawingView: ZoomView
 
     override func resetCursorRects()
     {
-        addCursorRect(bounds, cursor: tool.cursor())
+        addCursorRect(visibleRect, cursor: tool.cursor())
     }
     
     func redrawConstruction() {
@@ -127,49 +133,135 @@ class DrawingView: ZoomView
     }
     
 // MARK: Drawing
-        
-    func drawGridInRect(var dirtyRect: CGRect)
-    {
-        dirtyRect.standardizeInPlace()
-        
-        let left = dirtyRect.origin.x - 10
-        let right = left + dirtyRect.size.width + 10
-        let bottom = dirtyRect.origin.y - 10
-        let top = bottom + dirtyRect.size.height + 10
-        
-        NSColor.lightGrayColor().set()
-        NSBezierPath.setDefaultLineWidth(0.1)
-        for var gx = floor(left / 10); gx * 10 <= right; ++gx {
-            let major = fmod(gx, 10) == 0
-            if major {
-                NSBezierPath.setDefaultLineWidth(0.25)
+    
+    func massiveChange() {
+        selection = []
+        snapConstructions = []
+        needsDisplay = true
+    }
+    
+    func drawBorder(dirtyRect: CGRect) {
+        if let pageRect = pageRect {
+            let page = document.page
+            let borderWidth = page.borderWidth / page.pageScale
+            var outsideBorderRect = pageRect.insetBy(dx: (page.borderInset + page.leftBorderOffset / 2) / page.pageScale, dy: page.borderInset / page.pageScale)
+            outsideBorderRect.origin.x += page.leftBorderOffset / 2 / page.pageScale
+            let insideBorderRect = outsideBorderRect.insetBy(dx: page.borderWidth / page.pageScale, dy: page.borderWidth / page.pageScale)
+            NSBezierPath.setDefaultLineWidth(2.0 / page.pageScale)
+            NSBezierPath.strokeRect(insideBorderRect)
+            NSBezierPath.setDefaultLineWidth(0.5 / page.pageScale)
+            NSBezierPath.strokeRect(outsideBorderRect)
+            NSBezierPath.strokeLineFromPoint(insideBorderRect.topLeft, toPoint: outsideBorderRect.topLeft)
+            NSBezierPath.strokeLineFromPoint(insideBorderRect.bottomLeft, toPoint: outsideBorderRect.bottomLeft)
+            NSBezierPath.strokeLineFromPoint(insideBorderRect.topRight, toPoint: outsideBorderRect.topRight)
+            NSBezierPath.strokeLineFromPoint(insideBorderRect.bottomRight, toPoint: outsideBorderRect.bottomRight)
+            let horizontalDivisions = Int(insideBorderRect.size.width / (page.gridSize / page.pageScale))
+            let verticalDivisions = Int(insideBorderRect.size.height / (page.gridSize / page.pageScale))
+            let horizontalGridSize = insideBorderRect.size.width / CGFloat(horizontalDivisions)
+            let verticalGridSize = insideBorderRect.size.height / CGFloat(verticalDivisions)
+            
+            for i in 1 ..< horizontalDivisions {
+                let x = CGFloat(i) * horizontalGridSize + insideBorderRect.left
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: x, y: insideBorderRect.top), toPoint: CGPoint(x: x, y: outsideBorderRect.top))
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: x, y: insideBorderRect.bottom), toPoint: CGPoint(x: x, y: outsideBorderRect.bottom))
             }
-            NSBezierPath.strokeLineFromPoint(CGPoint(x: gx * 10, y: bottom), toPoint: CGPoint(x: gx * 10, y: top))
-            if major {
-                NSBezierPath.setDefaultLineWidth(0.1)
+            
+            let font = NSFont.systemFontOfSize(borderWidth * 0.8)
+            let attributes = [NSFontAttributeName: font]
+
+            for i in 0 ..< horizontalDivisions {
+                let label = "\(i)" as NSString
+                let labelWidth = label.sizeWithAttributes(attributes).width
+                let x = CGFloat(i) * horizontalGridSize + insideBorderRect.left + horizontalGridSize / 2 - labelWidth / 2
+                label.drawAtPoint(CGPoint(x: x, y: insideBorderRect.top + borderWidth * 0.1), withAttributes: attributes)
+                label.drawAtPoint(CGPoint(x: x, y: outsideBorderRect.bottom + borderWidth * 0.1), withAttributes: attributes)
+            }
+            
+            for i in 1 ..< verticalDivisions {
+                let y = CGFloat(i) * verticalGridSize + insideBorderRect.bottom
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: outsideBorderRect.left, y: y), toPoint: CGPoint(x: insideBorderRect.left, y: y))
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: outsideBorderRect.right, y: y), toPoint: CGPoint(x: insideBorderRect.right, y: y))
+            }
+            
+            let charLabels: [NSString] = ["A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+            for i in 0 ..< verticalDivisions {
+                let labelIndex = verticalDivisions - i - 1
+                if labelIndex < charLabels.count {
+                    let label = charLabels[labelIndex]
+                    let labelSize = label.sizeWithAttributes(attributes)
+                    let y = CGFloat(i) * verticalGridSize + insideBorderRect.bottom + verticalGridSize / 2 - labelSize.height / 2
+                    label.drawAtPoint(CGPoint(x: outsideBorderRect.left + borderWidth / 2 - labelSize.width / 2, y: y), withAttributes: attributes)
+                    label.drawAtPoint(CGPoint(x: insideBorderRect.right + borderWidth / 2 - labelSize.width / 2, y: y), withAttributes: attributes)
+                }
             }
         }
+    }
         
-        for var gy = floor(bottom / 10); gy * 10 <= top; ++gy {
-            let major = fmod(gy, 10) == 0
-            if major {
-                NSBezierPath.setDefaultLineWidth(0.25)
+    func drawGridInRect(dirtyRect: CGRect, layer: ArsLayer)
+    {
+        if NSGraphicsContext.currentContextDrawingToScreen() {
+            let gridSize = layer.minorGrid / document.page.pageScale
+            let divsPerMajor = round(layer.majorGrid / document.layer.minorGrid)
+            let xs = floor((dirtyRect.origin.x - gridSize) / gridSize) * gridSize
+            let ys = floor((dirtyRect.origin.y - gridSize) / gridSize) * gridSize
+            let top = dirtyRect.origin.y + dirtyRect.size.height + gridSize
+            let bottom = dirtyRect.origin.y - gridSize
+            let left = dirtyRect.origin.x - gridSize
+            let right = dirtyRect.origin.x + dirtyRect.size.width + gridSize
+            
+            NSColor.blueColor().colorWithAlphaComponent(0.5).set()
+            var x = xs
+            while x <= right {
+                let linewidth = CGFloat(fmod((x / gridSize), divsPerMajor) == 0 ? 0.25 : 0.1)
+                NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: x, y: top), toPoint: CGPoint(x: x, y: bottom))
+                x += gridSize
             }
-            NSBezierPath.strokeLineFromPoint(CGPoint(x: left, y: gy * 10), toPoint: CGPoint(x: right, y: gy * 10))
-            if major {
-                NSBezierPath.setDefaultLineWidth(0.1)
+            
+            var y = ys
+            while y <= top {
+                let linewidth = CGFloat(fmod((y / gridSize), divsPerMajor) == 0 ? 0.25 : 0.1)
+                NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
+                NSBezierPath.strokeLineFromPoint(CGPoint(x: left, y: y), toPoint: CGPoint(x: right, y: y))
+                y += gridSize
             }
+        }
+    }
+    
+    func drawArsLayer(layer: ArsLayer) {
+        if layer.enabled {
+            CGContextSaveGState(context)
+            CGContextScaleCTM(context, layer.layerScale, layer.layerScale)
+            for g in layer.contents {
+                if needsToDrawRect(g.bounds) {
+                    g.drawInView(self)
+                }
+            }
+            CGContextRestoreGState(context)
         }
     }
     
     override func drawRect(dirtyRect: CGRect)
     {
         context = NSGraphicsContext.currentContext()?.CGContext
+        let handleSize = scaleFloat(HSIZE)
         
         NSEraseRect(dirtyRect)
-        drawGridInRect(dirtyRect)
+        drawBorder(dirtyRect)
+        if document.layer.gridMode != .Never {
+            drawGridInRect(dirtyRect, layer: document.layer)
+        }
         
-        CGContextSetLineWidth(context, 0.0)
+        for layerIndex in 0 ..< document.layers.count {
+            if layerIndex != document.currentLayer {
+                let layer = document.layers[layerIndex]
+                
+                if layer.gridModeAlways {
+                    drawGridInRect(dirtyRect, layer: layer)
+                }
+                drawArsLayer(document.layers[layerIndex])
+            }
+        }
         
         for g in displayList
         {
@@ -188,7 +280,7 @@ class DrawingView: ZoomView
         
         for g in selection
         {
-            if needsToDrawRect(NSInsetRect(g.bounds, -HSIZE / 2.0, -HSIZE / 2.0))
+            if needsToDrawRect(NSInsetRect(g.bounds, -handleSize / 2.0, -handleSize / 2.0))
             {
                 drawHandlesForGraphic(g)
             }
@@ -325,9 +417,11 @@ class DrawingView: ZoomView
     
     func snapToGrid(var point: CGPoint) -> SnapResult?
     {
+        let grid = document.layer.minorGrid
+        
         if gridSnap {
-            point.x = round(point.x / 10) * 10
-            point.y = round(point.y / 10) * 10
+            point.x = round(point.x / grid) * grid
+            point.y = round(point.y / grid) * grid
         
             return SnapResult(location: point, type: .Grid)
         }
@@ -393,17 +487,23 @@ class DrawingView: ZoomView
     }
     
     func addSnapConstructionsForPoint(p: CGPoint) {
-        snapConstructions = snapConstructions.filter { $0.origin != p }
+        let smallDistance = scaleFloat(10)
+        let horizontal = ConstructionLine(origin: p, vector: CGPoint(x: 1, y: 0))
+        let vertical = ConstructionLine(origin: p, vector: CGPoint(x: 0, y: 1))
         
-        for i in 0 ..< 2 {
-            let line = ConstructionLine(origin: p)
-            line.angle = CGFloat(i) * PI / 2
-            snapConstructions = snapConstructions.filter { !$0.isColinearWith(line) }
-            snapConstructions.append(line)
+        snapConstructions = snapConstructions.filter {
+            if $0.vector.x == 0 && abs($0.origin.x - p.x) < smallDistance
+                || $0.vector.y == 0 && abs($0.origin.y - p.y) < smallDistance
+                || $0.origin.distanceToPoint(p) < smallDistance {
+                    return false
+            }
+            return true
         }
         
-        while snapConstructions.count > 20 {
-            let old = snapConstructions.removeFirst()
+        snapConstructions.insertContentsOf([horizontal, vertical], at: 0)
+
+        while snapConstructions.count > 10 {
+            let old = snapConstructions.removeLast()
             if old.isActive {
                 setNeedsDisplayInRect(old.bounds)
             }
@@ -633,4 +733,45 @@ class DrawingView: ZoomView
         selection = []
     }
     
+// MARK: Printing Support
+    
+    var perPageSize: CGSize {
+        var size = document.printInfo.paperSize
+        size = size * (1.0 / 72.0)          // convert to inches
+        size = size * (100.0 / document.page.pageScale)
+        return size
+    }
+    
+    func getPages() -> (Int, Int) {
+        if let pageRect = pageRect {
+            var horizontalPages = Int(pageRect.size.width / perPageSize.width)
+            if CGFloat(horizontalPages) * perPageSize.width < pageRect.size.width {
+                horizontalPages += 1
+            }
+            var verticalPages = Int(pageRect.size.height / perPageSize.height)
+            if CGFloat(verticalPages) * perPageSize.height < pageRect.size.height {
+                verticalPages += 1
+            }
+            return (horizontalPages, verticalPages)
+        }
+        return (1, 1)
+    }
+    
+    override func knowsPageRange(range: NSRangePointer) -> Bool {
+        let (h, v) = getPages()
+        range.memory.location = 1
+        range.memory.length = h * v
+        return true
+    }
+    
+    override func rectForPage(page: Int) -> CGRect {
+        let pp = page - 1
+        let (hm, _) = getPages()
+        let v = pp / hm
+        let h = pp - v * hm
+        let thisPageOrigin = bounds.origin + CGPoint(x: CGFloat(h) * perPageSize.width, y: CGFloat(v) * perPageSize.height)
+        let thisPageRect = CGRect(origin: thisPageOrigin, size: perPageSize)
+        
+        return thisPageRect
+    }
 }

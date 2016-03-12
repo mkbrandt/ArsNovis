@@ -193,8 +193,13 @@ class LineGraphic: Graphic
         }
         
         let angle = vector.angle;
-        let v = CGPoint(length: len, angle: angle)
+        var v = CGPoint(length: len, angle: angle)
         
+        if vector.x == 0 {              // force vertical
+            v.x = 0
+        } else if vector.y == 0 {       // force horizontal
+            v.y = 0
+        }
         return origin + v;
     }
     
@@ -294,6 +299,7 @@ class LineTool: GraphicTool
     
     override func mouseDown(location: CGPoint, view: DrawingView) {
         view.construction = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
+        view.addSnapConstructionsForPoint(location)
     }
     
     override func mouseDragged(var location: CGPoint, view: DrawingView) {
@@ -307,6 +313,7 @@ class LineTool: GraphicTool
             lg.endPoint = location
             
             view.redrawConstruction()
+            view.addSnapConstructionsForPoint(lg.origin)
         }
     }
 }

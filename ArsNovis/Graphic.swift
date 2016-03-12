@@ -67,6 +67,16 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
+    var x: CGFloat  {
+        set { origin.x = newValue }
+        get { return origin.x }
+    }
+    
+    var y: CGFloat {
+        set { origin.y = newValue }
+        get { return origin.y }
+    }
+    
     var lineWidth: CGFloat = 1.0 {
         didSet { cachedPath = nil }
     }
@@ -145,35 +155,6 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     {
         let data = NSKeyedArchiver.archivedDataWithRootObject(self)
         return data
-    }
-    
-    // KVC
-    
-    override func valueForUndefinedKey(key: String) -> AnyObject?
-    {
-        switch key {
-            case "x":
-                return origin.x
-            case "y":
-                return origin.y
-            default:
-                return nil
-        }
-    }
-    
-    override func setValue(value: AnyObject?, forUndefinedKey key: String) {
-        switch key {
-            case "x":
-                if let x = value as? NSNumber {
-                    origin.x = CGFloat(x.doubleValue)
-                }
-            case "y":
-                if let y = value as? NSNumber {
-                    origin.y = CGFloat(y.doubleValue)
-                }
-            default:
-                break
-        }
     }
     
     // Inspection

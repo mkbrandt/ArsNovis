@@ -10,7 +10,17 @@ import Cocoa
 
 class RectGraphic: Graphic
 {
-    var size: NSSize { didSet { cachedPath = nil } }
+    var size: NSSize {
+        willSet {
+            willChangeValueForKey("width")
+            willChangeValueForKey("height")
+        }
+        didSet {
+            cachedPath = nil
+            didChangeValueForKey("width")
+            didChangeValueForKey("height")
+        }
+    }
     
     var width: CGFloat {
         get { return size.width }

@@ -32,6 +32,7 @@ class SelectTool: GraphicTool
     }
     
     override func mouseDown(location: CGPoint, view: DrawingView) {
+        let handleSize = view.scaleFloat(HSIZE)
         mode = SelectionMode.Select
         restoreOnMove = false
         selectOrigin = location
@@ -44,7 +45,7 @@ class SelectTool: GraphicTool
             } else if view.selection.count == 1 {
                 for var i = 0; i < g.points.count; ++i {
                     let p = g.points[i]
-                    if p.distanceToPoint(location) < HSIZE {
+                    if p.distanceToPoint(location) < handleSize {
                         selectedGraphic = g
                         selectedHandle = i
                         mode = SelectionMode.MoveHandle

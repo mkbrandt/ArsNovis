@@ -11,6 +11,8 @@ import Foundation
 let IOTA: CGFloat = 0.000000001
 let PI: CGFloat = 3.14159265357
 
+// MARK: Point Math
+
 func +(a: CGPoint, b: CGPoint) -> CGPoint {
     return CGPoint(x: a.x + b.x, y: a.y + b.y)
 }
@@ -39,6 +41,33 @@ func dotProduct(a: CGPoint, _ b: CGPoint) -> CGFloat {
     return a.x * b.x + a.y * b.y
 }
 
+// MARK: Rect and Size manipulation
+
+func +(a: CGRect, b: CGRect) -> CGRect {
+    if a.isEmpty {
+        return b
+    } else if b.isEmpty {
+        return a
+    }
+    return a.union(b)
+}
+
+func +(a: CGSize, b: CGSize) -> CGSize {
+    return CGSize(width: a.width + b.width, height: a.height + b.height)
+}
+
+func -(a: CGSize, b: CGSize) -> CGSize {
+    return CGSize(width: a.width - b.width, height: a.height - b.height)
+}
+
+func *(a: CGSize, b: CGFloat) -> CGSize {
+    return CGSize(width: a.width * b, height: a.height * b)
+}
+
+func /(a: CGSize, b: CGFloat) -> CGSize {
+    return CGSize(width: a.width / b, height: a.height / b)
+}
+
 func rectContainingPoints(array: [CGPoint]) -> CGRect {
     var x_min = CGFloat.infinity
     var x_max = -CGFloat.infinity
@@ -58,6 +87,8 @@ func rectContainingPoints(array: [CGPoint]) -> CGRect {
     return CGRect(x: x_min, y: y_min, width: x_max - x_min, height: y_max - y_min)
 }
 
+// MARK: utilities
+
 func constrainTo45Degrees(location: CGPoint, relativeToPoint startPoint: CGPoint) -> CGPoint {
     let delta = location - startPoint
     let maxoffset = max(abs(delta.x), abs(delta.y))
@@ -70,6 +101,8 @@ func sign(f: CGFloat) -> CGFloat {
     }
     return 1
 }
+
+// MARK: Class Extensions
 
 extension CGPoint
 {
@@ -109,5 +142,13 @@ extension CGPoint
 
 extension CGRect
 {
-    var center: CGPoint { return CGPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2) }
+    var center: CGPoint         { return CGPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2) }
+    var top: CGFloat            { return origin.y + size.height }
+    var left: CGFloat           { return origin.x }
+    var bottom: CGFloat         { return origin.y }
+    var right: CGFloat          { return origin.x + size.width }
+    var topLeft: CGPoint        { return CGPoint(x: left, y: top) }
+    var bottomLeft: CGPoint     { return CGPoint(x: left, y: bottom) }
+    var topRight: CGPoint       { return CGPoint(x: right, y: top) }
+    var bottomRight: CGPoint    { return CGPoint(x: right, y: bottom) }
 }

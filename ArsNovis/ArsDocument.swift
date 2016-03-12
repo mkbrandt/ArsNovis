@@ -8,11 +8,64 @@
 
 import Cocoa
 
+class ArsPageLayoutController: NSViewController
+{
+    @IBOutlet var templateChooser: NSPopUpButton!
+    
+    override func awakeFromNib() {
+        templateChooser.removeAllItems()
+        templateChooser.addItemsWithTitles(["ANSI A", "ANSI B", "ANSI C", "ANSI D"])
+    }
+}
+
+enum MeasurementUnits: Int {
+    case Inches_dec = 0, Inches_frac, Feet_dec, Feet_frac, Millimeters, Meters
+}
+
+enum GridMode: Int {
+    case Never = 0, Selected = 1, Always = 2
+}
+
+var measurementUnits: MeasurementUnits = .Feet_dec
+
 class ArsLayer: NSObject, NSCoding
 {
     var name: String = "untitled"
     var contents: [Graphic] = []
     var enabled = true
+    var layerScale: CGFloat = 1.0
+    var majorGrid: CGFloat = 100
+    var minorGrid: CGFloat = 10
+    var snapToGrid: Bool = false
+    var gridMode: GridMode = .Selected {
+        willSet {
+            willChangeValueForKey("gridModeNever")
+            willChangeValueForKey("gridModeSelected")
+            willChangeValueForKey("gridModeAlways")
+        }
+        didSet {
+            didChangeValueForKey("gridModeNever")
+            didChangeValueForKey("gridModeSelected")
+            didChangeValueForKey("gridModeAlways")
+        }
+    }
+    
+    var gridModeNever: Bool {
+        get { return gridMode == .Never }
+        set { if newValue { gridMode = .Never } }
+    }
+    var gridModeSelected: Bool {
+        get { return gridMode == .Selected }
+        set { if newValue { gridMode = .Selected } }
+    }
+    var gridModeAlways: Bool {
+        get { return gridMode == .Always }
+        set { if newValue { gridMode = .Always } }
+    }
+    
+    var bounds: CGRect {
+        return contents.reduce(CGRect(), combine: { return $0 + $1.bounds} )
+    }
     
     init(name: String) {
         super.init()
@@ -31,6 +84,12 @@ class ArsLayer: NSObject, NSCoding
         }
     }
     
+    init(copyLayer: ArsLayer) {
+        name = copyLayer.name
+        contents = copyLayer.contents
+        enabled = copyLayer.enabled
+    }
+    
     func encodeWithCoder(coder: NSCoder) {
         coder.encodeBool(enabled, forKey: "enabled")
         coder.encodeObject(contents, forKey: "contents")
@@ -42,17 +101,83 @@ class ArsPage: NSObject, NSCoding
 {
     var name = "untitled"
     var pageRect: CGRect?
+    var pageScale: CGFloat = 1.0
     var layers: [ArsLayer] = [ArsLayer(name: "Main")]
+    var leftBorderOffset: CGFloat = 0
+    var borderInset: CGFloat = 10
+    var borderWidth: CGFloat = 20
+    var gridSize: CGFloat = 200
+    var units: MeasurementUnits = .Feet_frac {
+        willSet {
+            willChangeValueForKey("unitsFeetFrac")
+            willChangeValueForKey("unitsFeetDec")
+            willChangeValueForKey("unitsInchFrac")
+            willChangeValueForKey("unitsInchDec")
+            willChangeValueForKey("unitsMillimeters")
+            willChangeValueForKey("unitsMeters")
+        }
+        didSet {
+            didChangeValueForKey("unitsFeetFrac")
+            didChangeValueForKey("unitsFeetDec")
+            didChangeValueForKey("unitsInchFrac")
+            didChangeValueForKey("unitsInchDec")
+            didChangeValueForKey("unitsMillimeters")
+            didChangeValueForKey("unitsMeters")
+            measurementUnits = units
+        }
+    }
     
-    init(name: String) {
+    var unitsFeetDec: Bool {
+        get { return units == .Feet_dec }
+        set { if newValue { units = .Feet_dec } }
+    }
+    var unitsFeetFrac: Bool {
+        get { return units == .Feet_frac }
+        set { if newValue { units = .Feet_frac } }
+    }
+    var unitsInchFrac: Bool {
+        get { return units == .Inches_frac }
+        set { if newValue { units = .Inches_frac } }
+    }
+    var unitsInchDec: Bool {
+        get { return units == .Inches_dec }
+        set { if newValue { units = .Inches_dec } }
+    }
+    var unitsMillimeters: Bool {
+        get { return units == .Millimeters }
+        set { if newValue { units = .Millimeters } }
+    }
+    var unitsMeters: Bool {
+        get { return units == .Meters }
+        set { if newValue { units = .Meters } }
+    }
+    
+    var printingRect: CGRect {
+        if let pageRect = pageRect {
+            return pageRect
+        } else {
+            return layers.reduce(CGRect(), combine: { return $0 + $1.bounds })
+        }
+    }
+    
+    init(name: String, printInfo: NSPrintInfo?) {
         self.name = name
+        if let printInfo = printInfo {
+            let sizeDiff = printInfo.paperSize - printInfo.imageablePageBounds.size
+            borderInset = max(sizeDiff.width, sizeDiff.height) / 2
+        }
     }
     
     required init?(coder decoder: NSCoder) {
         super.init()
         if let name = decoder.decodeObjectForKey("name") as? String,
             let layers = decoder.decodeObjectForKey("layers") as? [ArsLayer] {
-                pageRect = decoder.decodeRectForKey("pageRect")
+                let rect = decoder.decodeRectForKey("pageRect")
+                if !rect.isEmpty {
+                    pageRect = rect
+                }
+                let dscale = decoder.decodeDoubleForKey("pageScale")
+                pageScale = dscale == 0 ? 1 : CGFloat(dscale)
                 self.layers = layers
                 self.name = name
         } else {
@@ -63,6 +188,7 @@ class ArsPage: NSObject, NSCoding
     func encodeWithCoder(coder: NSCoder) {
         coder.encodeObject(name, forKey: "name")
         coder.encodeObject(layers, forKey: "layers")
+        coder.encodeDouble(Double(pageScale), forKey: "pageScale")
         if let rect = pageRect {
             coder.encodeRect(rect, forKey: "pageRect")
         }
@@ -72,9 +198,9 @@ class ArsPage: NSObject, NSCoding
 class ArsWorkspace: NSObject, NSCoding
 {
     var pages: [ArsPage] = []
-
+    
     override init() {
-        pages = [ArsPage(name: "Main Workspace")]
+        super.init()
     }
     
     required init?(coder decoder: NSCoder) {
@@ -129,8 +255,14 @@ class ArsState: NSObject, NSCoding
     }
 }
 
+// MARK: Document
+
 class ArsDocument: NSDocument
 {
+    @IBOutlet var newPageDialog: NewPageDialog!
+    @IBOutlet var pageLayoutAccessory: ArsPageLayoutController!
+    @IBOutlet var drawingSizePopup: NSPopUpButton!
+    
     @IBOutlet var drawingView: DrawingView? {
         didSet {
             drawingView?.document = self
@@ -138,16 +270,35 @@ class ArsDocument: NSDocument
                 drawingView?.window?.setFrame(windowFrame, display:  true)
             }
             if let scale = savedScale, let centeredPoint = savedCenterPoint {
+                drawingView?.zoomToFit(self)
+                drawingView?.zoomByFactor(100)
+                drawingView?.zoomByFactor(0.01)
                 drawingView?.zoomToAbsoluteScale(scale)
                 drawingView?.scrollPointToCenter(centeredPoint)
             } else {
-                drawingView?.zoomByFactor(10)
-                drawingView?.zoomByFactor(0.1)
+                drawingView?.zoomByFactor(100)
+                drawingView?.zoomByFactor(0.01)
             }
         }
     }
     
-    var workspace: ArsWorkspace = ArsWorkspace()
+    var workspace: ArsWorkspace = ArsWorkspace() {
+        willSet {
+            willChangeValueForKey("page")
+            willChangeValueForKey("pages")
+            willChangeValueForKey("layer")
+            willChangeValueForKey("layers")
+            willChangeValueForKey("state")
+        }
+        didSet {
+            didChangeValueForKey("page")
+            didChangeValueForKey("pages")
+            didChangeValueForKey("layer")
+            didChangeValueForKey("layers")
+            didChangeValueForKey("state")
+        }
+    }
+    
     var displayList: [Graphic] {
         get {
             return workspace.pages[currentPage].layers[currentLayer].contents
@@ -177,35 +328,56 @@ class ArsDocument: NSDocument
         }
     }
     
-    var cachedBackground: [Graphic]?
+    var pages: [ArsPage]        { return workspace.pages }
+    var page: ArsPage           { return pages[currentPage] }
+    var layers: [ArsLayer]      { return page.layers }
+    var layer: ArsLayer         { return layers[currentLayer] }
     
-    var backgroundList: [Graphic] {
-        if let background = cachedBackground {
-            return background
+    var currentPage: Int = 0 {
+        willSet {
+            willChangeValueForKey("layers")
+            willChangeValueForKey("page")
         }
-        let page = workspace.pages[currentPage]
-        var list: [Graphic] = []
-        for i in 0 ..< page.layers.count {
-            if i != currentLayer && page.layers[i].enabled {
-                list += page.layers[i].contents
-            }
+        didSet {
+            didChangeValueForKey("layers")
+            didChangeValueForKey("page")
+            measurementUnits = page.units
+            drawingView?.massiveChange()
         }
-        cachedBackground = list
-        return list
     }
     
-    var currentPage: Int = 0        { didSet { cachedBackground = nil }}
-    var currentLayer: Int = 0       { didSet { cachedBackground = nil }}
+    var currentLayer: Int = 0 {
+        willSet {
+            willChangeValueForKey("layer")
+        }
+        didSet {
+            didChangeValueForKey("layer")
+            drawingView?.massiveChange()
+        }
+    }
+    
+    var pageSelection: NSIndexSet {
+        get {
+            return NSIndexSet(index: currentPage)
+        }
+        set {
+            let index = newValue.firstIndex
+            if index < pages.count && index != NSNotFound {
+                currentPage = index
+            }
+        }
+    }
     
     override init()
     {
         super.init()
-        // Add your subclass-specific initialization here.
+        workspace.pages.append(ArsPage(name: "Page 1", printInfo: printInfo))
     }
 
     override func windowControllerDidLoadNib(aController: NSWindowController)
     {
-        super.windowControllerDidLoadNib(aController)        
+        super.windowControllerDidLoadNib(aController)
+        aController.window?.titleVisibility = NSWindowTitleVisibility.Hidden
     }
 
     override class func autosavesInPlace() -> Bool
@@ -234,22 +406,136 @@ class ArsDocument: NSDocument
         }
     }
     
+// MARK: Printing
+    
+    override func preparePageLayout(pageLayout: NSPageLayout) -> Bool {
+        pageLayout.addAccessoryController(pageLayoutAccessory)
+        return true
+    }
+    
+    enum PrinterError: ErrorType {
+        case NoViewError
+    }
+    
+    var printSaveZoomState = ZoomState(scale: 1, centerPoint: CGPoint())
+    
+    override func printOperationWithSettings(printSettings: [String : AnyObject]) throws -> NSPrintOperation {
+        if let drawingView = drawingView {
+            let operation = NSPrintOperation(view: drawingView, printInfo: printInfo)
+            return operation
+        } else {
+            throw PrinterError.NoViewError
+        }
+    }
+    
+    func document(document: NSDocument, didPrintSuccessfully: Bool,  contextInfo: UnsafeMutablePointer<Void>) {
+        drawingView?.zoomState = printSaveZoomState
+        drawingView?.constrainViewToSuperview = true
+        drawingView?.needsDisplay = true
+    }
+    
+    override func printDocument(sender: AnyObject?) {
+        if let drawingView = drawingView {
+            drawingView.constrainViewToSuperview = false        // allow random zooming
+            printSaveZoomState = drawingView.zoomState
+            drawingView.zoomToAbsoluteScale(0.72 * page.pageScale * printInfo.scalingFactor)
+            printDocumentWithSettings([:], showPrintPanel: true, delegate: self, didPrintSelector: "document:didPrintSuccessfully:contextInfo:", contextInfo: nil)
+        }
+    }
+    
 // MARK: Workspace Maintenance
     
+    @IBAction func pageSelectionChanged(sender: NSTableView) {
+        currentPage = sender.selectedRow
+    }
+    
+    @IBAction func layerSelectionChanged(sender: NSTableView) {
+        currentLayer = sender.selectedRow
+    }
+    
+    @IBAction func layerEnableChanged(sender: AnyObject?) {
+        willChangeValueForKey("layer")
+        drawingView?.massiveChange()
+        didChangeValueForKey("layer")
+    }
+    
     @IBAction func newPage(sender: AnyObject?) {
-        
+        if let window = drawingView?.window {
+            newPageDialog.nameField.stringValue = "Page \(pages.count)"
+            window.beginSheet(newPageDialog) { response in
+                if response == NSModalResponseCancel {
+                    return
+                }
+                let refIndex = self.newPageDialog.referencePageControl.indexOfSelectedItem
+                let refPage = self.pages[refIndex]
+                let name = self.newPageDialog.nameField.stringValue
+                let doCopy = self.newPageDialog.copyLayersButton.intValue != 0
+                let doRef = self.newPageDialog.referenceLayersButton.intValue != 0
+                let newPage = ArsPage(name: name, printInfo: self.printInfo)
+                
+                newPage.pageRect = refPage.pageRect
+                
+                if doCopy {
+                    newPage.layers = refPage.layers.map { return ArsLayer(copyLayer: $0) }
+                } else if doRef {
+                    newPage.layers = refPage.layers
+                }
+                
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.willChangeValueForKey("pages")
+                    self.workspace.pages.append(newPage)
+                    self.didChangeValueForKey("pages")
+                }
+            }
+        }
     }
     
     @IBAction func deletePage(sender: AnyObject?) {
-        
+        if pages.count > 1 {
+            let alert = NSAlert()
+            alert.messageText = "Are you sure? This will delete all of the page content in \(layer.name)."
+            alert.alertStyle = NSAlertStyle.WarningAlertStyle
+            alert.addButtonWithTitle("Cancel")
+            alert.addButtonWithTitle("Delete")
+            if let window = drawingView?.window {
+                alert.beginSheetModalForWindow(window) { (response) -> Void in
+                    if response == NSAlertSecondButtonReturn {
+                        self.willChangeValueForKey("pages")
+                        self.workspace.pages.removeAtIndex(self.currentPage)
+                        self.currentPage = 0
+                        self.didChangeValueForKey("pages")
+                    }
+                }
+            }
+        }
     }
     
     @IBAction func newLayer(sender: AnyObject?) {
-        
+        willChangeValueForKey("layers")
+        workspace.pages[currentPage].layers.append(ArsLayer(name: "Unnamed"))
+        didChangeValueForKey("layers")
     }
     
     @IBAction func deleteLayer(sender: AnyObject?) {
-        
+        if layers.count > 1 {
+            if layer.contents.count > 0 {
+                let alert = NSAlert()
+                alert.messageText = "Are you sure? This will delete all of the layer content in \(layer.name)."
+                alert.alertStyle = NSAlertStyle.WarningAlertStyle
+                alert.addButtonWithTitle("Cancel")
+                alert.addButtonWithTitle("Delete")
+                if let window = drawingView?.window {
+                    alert.beginSheetModalForWindow(window) { (response) -> Void in
+                        if response == NSAlertSecondButtonReturn {
+                            self.willChangeValueForKey("layers")
+                            self.workspace.pages[self.currentPage].layers.removeAtIndex(self.currentLayer)
+                            self.currentLayer = 0
+                            self.didChangeValueForKey("layers")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
