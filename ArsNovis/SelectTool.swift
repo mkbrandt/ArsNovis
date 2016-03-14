@@ -94,8 +94,6 @@ class SelectTool: GraphicTool
             view.selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
             view.selectObjectsInRect(rectContainingPoints([selectOrigin, location]))
             view.setNeedsDisplayInRect(view.bounds)
-        } else {
-            mouseDragged(location, view: view)
         }
     }
     

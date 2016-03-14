@@ -195,11 +195,62 @@ class RectTool: GraphicTool
     }
 }
 
+class CenterRectTool: GraphicTool
+{
+    var startPoint = CGPoint(x: 0, y: 0)
+    
+    override func cursor() -> NSCursor {
+        return NSCursor.crosshairCursor()
+    }
+    
+    override func selectTool(view: DrawingView) {
+        view.setDrawingHint("Drawing Rectangles from Center")
+    }
+    
+    override func mouseDown(location: CGPoint, view: DrawingView) {
+        startPoint = location
+        view.construction = RectGraphic(origin: location, size: NSSize(width: 0, height: 0))
+    }
+    
+    override func mouseDragged(var location: CGPoint, view: DrawingView) {
+        if view.shiftKeyDown {
+            location = constrainTo45Degrees(location, relativeToPoint: startPoint)
+        }
+        let r = rectContainingPoints([startPoint + startPoint - location, location])
+        if let rg = view.construction as? RectGraphic {
+            view.redrawConstruction()
+            
+            rg.origin = r.origin
+            rg.size = r.size
+            
+            view.redrawConstruction()
+        }
+    }
+}
+
 class ElipseTool: RectTool
 {
+    override func selectTool(view: DrawingView) {
+        view.setDrawingHint("Drawing Elipses by corner")
+    }
+    
     override func mouseDown(location: CGPoint, view: DrawingView) {
         startPoint = location
         view.construction = ElipseGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
 }
+
+
+class CenterElipseTool: CenterRectTool
+{
+    override func selectTool(view: DrawingView) {
+        view.setDrawingHint("Drawing Elipse from Center")
+    }
+    
+    override func mouseDown(location: CGPoint, view: DrawingView) {
+        startPoint = location
+        view.construction = ElipseGraphic(origin: location, size: NSSize(width: 0, height: 0))
+    }
+}
+
 

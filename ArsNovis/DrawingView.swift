@@ -15,6 +15,8 @@ class DrawingView: ZoomView
 {
     @IBOutlet var hintField: NSTextField?
     @IBOutlet var inspector: GraphicInspector?      { didSet { inspector?.view = self }}
+    @IBOutlet var menuWindow: NSWindow!
+    @IBOutlet var menuButton: NSButton!
     
     var document: ArsDocument!
     
@@ -64,13 +66,15 @@ class DrawingView: ZoomView
     
     var snapConstructions: [ConstructionLine] = []
     
-    var tool: GraphicTool = LineTool() {
+    var tool: GraphicTool = SelectTool() {
         didSet { selection = [] }
     }
+    
     var gridSnap: Bool      {
         get { return document.layer.snapToGrid }
         set { document.layer.snapToGrid = newValue }
     }
+    
     var cursorNote = ""
     var snappedCursor: SnapResult?
     
@@ -590,19 +594,19 @@ class DrawingView: ZoomView
         case "\t":
             inspector?.beginEditing()
         case "b":
-            tool = BezierTool()
+            setBezierTool(self)
         case "e":
-            tool = ElipseTool()
+            setElipseTool(self)
         case "g":
             gridSnap = !gridSnap
         case "l":
-            tool = LineTool()
+            setLineTool(self)
         case "r":
-            tool = RectTool()
+            setRectTool(self)
         case "a":
-            tool = Arc3PtTool()
+            setArc3Tool(self)
         case "s":
-            tool = SelectTool()
+            setSelectTool(self)
         default:
             super.keyDown(theEvent)
         }
@@ -621,33 +625,72 @@ class DrawingView: ZoomView
     
 // MARK: IB Actions
     
+    @IBAction func menuButtonPushed(sender: NSView) {
+        menuWindow.backgroundColor = NSColor.clearColor()
+        menuWindow.opaque = false
+        menuWindow.styleMask = NSBorderlessWindowMask
+        let menuWindowFrame = sender.convertRect(sender.bounds, toView: nil)
+        if let window = window {
+            let menuFrame = window.convertRectToScreen(menuWindowFrame)
+            let menuOrigin = CGPoint(x: menuFrame.origin.x, y: menuFrame.origin.y - menuWindow.frame.size.height)
+            menuWindow.setFrameOrigin(menuOrigin)
+        }
+        menuWindow.orderFront(sender)
+    }
+    
     @IBAction func setLineTool(sender: AnyObject?) {
         tool = LineTool()
+        menuButton.image = NSImage(named: "LineTool")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setRectTool(sender: AnyObject?) {
         tool = RectTool()
+        menuButton.image = NSImage(named: "RectTool")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setArc3Tool(sender: AnyObject?) {
         tool = Arc3PtTool()
+        menuButton.image = NSImage(named: "Arc3Point")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setArcCenterTool(sender: AnyObject?) {
+        tool = ArcCenterTool()
+        menuButton.image = NSImage(named: "ArcFromCenter")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setBezierTool(sender: AnyObject?) {
         tool = BezierTool()
+        menuButton.image = NSImage(named: "BezierTool")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setElipseTool(sender: AnyObject?) {
         tool = ElipseTool()
+        menuButton.image = NSImage(named: "CornerCircleTool")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setCenterElipseTool(sender: AnyObject?) {
+        tool = CenterElipseTool()
+        menuButton.image = NSImage(named: "CenterCircleTool")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setSelectTool(sender: AnyObject?) {
         tool = SelectTool()
+        menuButton.image = NSImage(named: "SelectTool")
+        menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     

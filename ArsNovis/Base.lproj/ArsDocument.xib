@@ -42,6 +42,8 @@
                                     <rect key="frame" x="0.0" y="538" width="895" height="635"/>
                                     <connections>
                                         <outlet property="inspector" destination="Eag-su-Q05" id="Aco-Hu-doY"/>
+                                        <outlet property="menuButton" destination="JPC-xO-O8o" id="AXI-kE-wAZ"/>
+                                        <outlet property="menuWindow" destination="8Pa-za-9lX" id="pIN-yE-G6v"/>
                                     </connections>
                                 </customView>
                             </subviews>
@@ -151,9 +153,26 @@
                             <action selector="toggleVisibility:" target="fQa-OI-Y9A" id="Odi-dc-dJU"/>
                         </connections>
                     </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="59C04914-4BE1-4134-A04E-FDEDF08E01E1" label="Menu" paletteLabel="Menu" image="SelectTool" id="Sl5-1g-T8k">
+                        <nil key="toolTip"/>
+                        <size key="minSize" width="32" height="32"/>
+                        <size key="maxSize" width="48" height="48"/>
+                        <button key="view" id="JPC-xO-O8o">
+                            <rect key="frame" x="2" y="14" width="32" height="32"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="SelectTool" imagePosition="only" alignment="left" borderStyle="border" imageScaling="proportionallyUpOrDown" inset="2" id="0LH-l3-rgW">
+                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                <font key="font" metaFont="system"/>
+                            </buttonCell>
+                            <connections>
+                                <action selector="menuButtonPushed:" target="MQl-G6-Nsf" id="w3J-O3-D1p"/>
+                            </connections>
+                        </button>
+                    </toolbarItem>
                 </allowedToolbarItems>
                 <defaultToolbarItems>
                     <toolbarItem reference="yPW-q5-YWe"/>
+                    <toolbarItem reference="Sl5-1g-T8k"/>
                     <toolbarItem reference="5ZY-83-zod"/>
                     <toolbarItem reference="JBu-54-5Mk"/>
                     <toolbarItem reference="5ZY-83-zod"/>
@@ -172,17 +191,17 @@
                 <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="27" horizontalPageScroll="10" verticalLineScroll="27" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="e0Z-Cm-TNC">
                     <rect key="frame" x="0.0" y="421" width="200" height="233"/>
                     <clipView key="contentView" ambiguous="YES" id="6HX-iV-2HV">
-                        <rect key="frame" x="1" y="23" width="198" height="209"/>
+                        <rect key="frame" x="1" y="0.0" width="198" height="232"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnSelection="YES" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="25" rowSizeStyle="automatic" headerView="Wa7-7p-2cl" viewBased="YES" id="Uo0-N0-cbQ">
-                                <rect key="frame" x="0.0" y="0.0" width="199" height="209"/>
+                                <rect key="frame" x="0.0" y="0.0" width="198" height="209"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <size key="intercellSpacing" width="3" height="2"/>
                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                 <tableColumns>
-                                    <tableColumn width="196" minWidth="40" maxWidth="1000" id="54G-Vn-fBd">
+                                    <tableColumn width="195" minWidth="40" maxWidth="1000" id="54G-Vn-fBd">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Pages">
                                             <font key="font" metaFont="smallSystem"/>
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
@@ -233,16 +252,16 @@
                         </subviews>
                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </clipView>
-                    <scroller key="horizontalScroller" verticalHuggingPriority="750" horizontal="YES" id="hz9-IB-fI0">
-                        <rect key="frame" x="1" y="216" width="198" height="16"/>
+                    <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="hz9-IB-fI0">
+                        <rect key="frame" x="1" y="7" width="0.0" height="16"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
-                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="6gu-JZ-AUw">
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="6gu-JZ-AUw">
                         <rect key="frame" x="224" y="17" width="15" height="102"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
                     <tableHeaderView key="headerView" id="Wa7-7p-2cl">
-                        <rect key="frame" x="0.0" y="0.0" width="199" height="23"/>
+                        <rect key="frame" x="0.0" y="0.0" width="198" height="23"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </tableHeaderView>
                 </scrollView>
@@ -482,7 +501,7 @@
                 <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="25" horizontalPageScroll="10" verticalLineScroll="25" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C45-bt-BVl">
                     <rect key="frame" x="0.0" y="267" width="200" height="233"/>
                     <clipView key="contentView" ambiguous="YES" id="5lZ-BW-jdt">
-                        <rect key="frame" x="1" y="23" width="198" height="209"/>
+                        <rect key="frame" x="1" y="0.0" width="198" height="232"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnSelection="YES" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="23" rowSizeStyle="automatic" headerView="DiV-A9-a6Y" viewBased="YES" id="6vz-9P-zSR">
@@ -531,7 +550,7 @@
                                             </binding>
                                         </connections>
                                     </tableColumn>
-                                    <tableColumn identifier="" width="144.0625" minWidth="10" maxWidth="3.4028234663852886e+38" id="iMe-Bt-uml">
+                                    <tableColumn identifier="" width="152" minWidth="10" maxWidth="3.4028234663852886e+38" id="iMe-Bt-uml">
                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Layer">
                                             <font key="font" metaFont="smallSystem"/>
                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
@@ -545,7 +564,7 @@
                                         <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         <prototypeCellViews>
                                             <tableCellView id="xpW-hx-KbY">
-                                                <rect key="frame" x="44" y="1" width="144" height="17"/>
+                                                <rect key="frame" x="44" y="1" width="152" height="17"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pKe-98-FlZ">
@@ -579,10 +598,10 @@
                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </clipView>
                     <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="v1e-dI-rgq">
-                        <rect key="frame" x="1" y="216" width="198" height="16"/>
+                        <rect key="frame" x="1" y="7" width="0.0" height="16"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
-                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="6aY-84-saw">
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="6aY-84-saw">
                         <rect key="frame" x="224" y="17" width="15" height="102"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
@@ -893,12 +912,145 @@ Gw
                 <font key="font" metaFont="system"/>
             </buttonCell>
         </button>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="8Pa-za-9lX" customClass="NSPanel">
+            <windowStyleMask key="styleMask" titled="YES" utility="YES" nonactivatingPanel="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="272" y="172" width="189" height="330"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <view key="contentView" id="OPW-rK-f6J">
+                <rect key="frame" x="0.0" y="0.0" width="189" height="330"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fNa-Dr-Xv0">
+                        <rect key="frame" x="0.0" y="282" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="SelectTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="kXc-s1-ykA">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setSelectTool:" target="MQl-G6-Nsf" id="q6f-4g-Qwe"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yyG-gX-Nns">
+                        <rect key="frame" x="0.0" y="235" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="LineTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Exz-RR-6Qc">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setLineTool:" target="MQl-G6-Nsf" id="x4M-HE-i4V"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zXO-GQ-v3j">
+                        <rect key="frame" x="0.0" y="188" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="RectTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="k1R-A4-F1E">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setRectTool:" target="MQl-G6-Nsf" id="4Xe-XO-vDb"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="R8G-U2-PuO">
+                        <rect key="frame" x="0.0" y="141" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CenterCircleTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="eKU-vq-E4g">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setCenterElipseTool:" target="MQl-G6-Nsf" id="255-4L-tzn"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d3u-tP-UuQ">
+                        <rect key="frame" x="0.0" y="94" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Arc3Point" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="FI9-vz-g8V">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setArc3Tool:" target="MQl-G6-Nsf" id="Df5-rP-ggw"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BKs-jJ-hqs">
+                        <rect key="frame" x="47" y="94" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="ArcFromCenter" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="wLN-aR-AxU">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setArcCenterTool:" target="MQl-G6-Nsf" id="8Fz-W3-lEa"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hx0-fF-NoQ">
+                        <rect key="frame" x="0.0" y="47" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="BezierTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Jvw-jJ-HD5">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setBezierTool:" target="MQl-G6-Nsf" id="x5f-9D-71m"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="98P-vD-PSw">
+                        <rect key="frame" x="0.0" y="0.0" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="TrimFrom" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7eF-3l-yBO">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HP0-TR-MEJ">
+                        <rect key="frame" x="47" y="0.0" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="TrimTo" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="u8q-BE-m7R">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EAm-cl-ADg">
+                        <rect key="frame" x="94" y="0.0" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="BreakAt" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Vyw-DX-EaI">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="e4Q-ac-4x6">
+                        <rect key="frame" x="47" y="141" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CornerCircleTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="v6p-vW-uNg">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setElipseTool:" target="MQl-G6-Nsf" id="xcN-tg-Mzu"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cTb-b2-4XI">
+                        <rect key="frame" x="141" y="0.0" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CornerTrim" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="kFR-OH-O4Z">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                    </button>
+                </subviews>
+            </view>
+            <point key="canvasLocation" x="-932.5" y="-292"/>
+        </window>
     </objects>
     <resources>
+        <image name="Arc3Point" width="48" height="48"/>
+        <image name="ArcFromCenter" width="48" height="54"/>
+        <image name="BezierTool" width="48" height="48"/>
+        <image name="BreakAt" width="48" height="48"/>
+        <image name="CenterCircleTool" width="48" height="48"/>
+        <image name="CornerCircleTool" width="48" height="48"/>
+        <image name="CornerTrim" width="48" height="48"/>
         <image name="DocumentInspector" width="16" height="24"/>
         <image name="LayerInspector" width="17" height="23"/>
+        <image name="LineTool" width="48" height="48"/>
         <image name="NSAddTemplate" width="11" height="11"/>
         <image name="NSRemoveTemplate" width="11" height="11"/>
+        <image name="RectTool" width="48" height="48"/>
+        <image name="SelectTool" width="48" height="48"/>
         <image name="ShowInspector" width="32" height="25"/>
+        <image name="TrimFrom" width="48" height="48"/>
+        <image name="TrimTo" width="48" height="48"/>
     </resources>
 </document>

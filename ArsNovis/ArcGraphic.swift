@@ -8,6 +8,10 @@
 
 import Cocoa
 
+enum ArcInspectionMode {
+    case ThreePoint, CenterRadius
+}
+
 class ArcGraphic: Graphic
 {
     var midPoint: CGPoint {
@@ -47,7 +51,25 @@ class ArcGraphic: Graphic
         }
     }
     
-    var radius: CGFloat { return (center - origin).length }
+    var radius: CGFloat {
+        get { return (center - origin).length }
+    }
+    
+    var startAngle: CGFloat {
+        get { return (origin - center).angle }
+        set {
+            origin = center + CGPoint(length: radius, angle: newValue)
+            midPoint = center + CGPoint(length: radius, angle: (newValue + endAngle) / 2.0)
+        }
+    }
+    
+    var endAngle: CGFloat {
+        get { return (endPoint - center).angle }
+        set {
+            endPoint = center + CGPoint(length: radius, angle: newValue)
+            midPoint = center + CGPoint(length: radius, angle: (newValue + startAngle) / 2.0)
+        }
+    }
     
     var clockwise: Bool {
         get {
@@ -347,6 +369,102 @@ class Arc3PtTool: GraphicTool
             state = 0
             view.setDrawingHint("3 Point Arc: Select start point")
             view.addConstruction()
+        }
+        view.redrawConstruction()
+    }
+}
+
+class ArcCenterTool: GraphicTool
+{
+    var state = 0
+    var center = CGPoint()
+    var radius = CGFloat(0)
+    var startAngle = CGFloat(0)
+    var lastMidPoint = CGPoint()
+    
+    override func cursor() -> NSCursor {
+        return NSCursor.crosshairCursor()
+    }
+    
+    override func selectTool(view: DrawingView) {
+        state = 0
+        view.setDrawingHint("Arc from center: Drag radius to start point")
+    }
+    
+    override func mouseDown(location: CGPoint, view: DrawingView) {
+        view.redrawConstruction()
+        switch state {
+        case 0:
+            view.construction = LineGraphic(origin: location)
+        default:
+            break
+        }
+        view.redrawConstruction()
+    }
+    
+    override func mouseMoved(location: CGPoint, view: DrawingView) {
+        view.redrawConstruction()
+        switch state {
+        case 0:
+            break
+        default:
+            var endAngle = (location - center).angle
+            var midAngle = (lastMidPoint - center).angle
+            
+            if startAngle > PI / 2 && endAngle < 0 {
+                endAngle += 2 * PI
+            } else if startAngle < -PI / 2 && endAngle > 0 {
+                endAngle -= 2 * PI
+            }
+            
+            if startAngle > PI / 2 && midAngle < 0 {
+                midAngle += 2 * PI
+            } else if startAngle < -PI / 2 && midAngle > 0 {
+                midAngle -= 2 * PI
+            }
+            
+            let arc = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle)
+            if (midAngle - startAngle > PI / 4 && endAngle - startAngle < 0 || midAngle - startAngle < -PI / 4 && endAngle - startAngle > 0) {
+                    arc.midPoint = lastMidPoint
+            } else {
+                lastMidPoint = arc.midPoint
+            }
+            view.construction = arc
+        }
+        view.redrawConstruction()
+    }
+    
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
+        view.redrawConstruction()
+        switch state {
+        case 0:
+            if let line = view.construction as? LineGraphic {
+                line.endPoint = location
+            }
+        default:
+            mouseMoved(location, view: view)
+        }
+        view.redrawConstruction()
+    }
+    
+    override func mouseUp(location: CGPoint, view: DrawingView) {
+        view.redrawConstruction()
+        switch state {
+        case 0:
+            state = 1
+            if let line = view.construction as? LineGraphic {
+                center = line.origin
+                radius = line.length
+                startAngle = line.angle
+                lastMidPoint = location
+                view.construction = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: startAngle)
+                print("construction = \(view.construction)")
+            }
+            view.setDrawingHint("Arc from center: Set end angle")
+        default:
+            state = 0
+            view.addConstruction()
+            view.setDrawingHint("Arc from center: Drag radius")
         }
         view.redrawConstruction()
     }

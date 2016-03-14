@@ -11,7 +11,7 @@ import Cocoa
 let ELGraphicUTI = "graphic.walkingdog.com"
 
 var RawSnapRadius = CGFloat(6.0)
-var SnapRadius = CGFloat(6.0)
+var SnapRadius = CGFloat(6.0)        // scaled by view when drawing
 
 enum SnapType
 {
@@ -47,6 +47,7 @@ struct SnapResult
 }
 
 /// Base class for all graphic objects
+
 class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
 {
     var lineColor = NSColor.blackColor()
