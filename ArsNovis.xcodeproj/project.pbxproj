@@ -18,6 +18,8 @@
 		7A3943491A70359B00E1FD94 /* GraphicMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3943481A70359B00E1FD94 /* GraphicMath.swift */; };
 		7A5BA25B1C87A97C00204FA3 /* DocInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5BA25A1C87A97C00204FA3 /* DocInspectorView.swift */; };
 		7A9391D11A7AB390005493E6 /* GraphicInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9391D01A7AB390005493E6 /* GraphicInspector.swift */; };
+		7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */; };
+		7AA606321C99FD4000933E34 /* TrimTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA606311C99FD4000933E34 /* TrimTools.swift */; };
 		7AC123FD1C89FE8B006EB23F /* Dialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC123FC1C89FE8B006EB23F /* Dialogs.swift */; };
 		7AC123FF1C90893A006EB23F /* Expressions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC123FE1C90893A006EB23F /* Expressions.swift */; };
 		7AC124011C908975006EB23F /* RegularExpression.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC124001C908975006EB23F /* RegularExpression.swift */; };
@@ -56,6 +58,8 @@
 		7A3943481A70359B00E1FD94 /* GraphicMath.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GraphicMath.swift; sourceTree = "<group>"; };
 		7A5BA25A1C87A97C00204FA3 /* DocInspectorView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocInspectorView.swift; sourceTree = "<group>"; };
 		7A9391D01A7AB390005493E6 /* GraphicInspector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GraphicInspector.swift; sourceTree = "<group>"; };
+		7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GroupGraphic.swift; sourceTree = "<group>"; };
+		7AA606311C99FD4000933E34 /* TrimTools.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrimTools.swift; sourceTree = "<group>"; };
 		7AC123FC1C89FE8B006EB23F /* Dialogs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Dialogs.swift; sourceTree = "<group>"; };
 		7AC123FE1C90893A006EB23F /* Expressions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Expressions.swift; sourceTree = "<group>"; };
 		7AC124001C908975006EB23F /* RegularExpression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegularExpression.swift; sourceTree = "<group>"; };
@@ -121,7 +125,9 @@
 				7AC321911A72B6B700836590 /* RectGraphic.swift */,
 				7AC321931A72B73100836590 /* ArcGraphic.swift */,
 				7AEF043A1C81F000006CCF60 /* BezierGraphic.swift */,
+				7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */,
 				7AC321951A72B75E00836590 /* SelectTool.swift */,
+				7AA606311C99FD4000933E34 /* TrimTools.swift */,
 				7AC3218D1A72B4B900836590 /* WDTabBar.swift */,
 				7A3943481A70359B00E1FD94 /* GraphicMath.swift */,
 				7AC124001C908975006EB23F /* RegularExpression.swift */,
@@ -262,6 +268,7 @@
 			files = (
 				7AEF043B1C81F000006CCF60 /* BezierGraphic.swift in Sources */,
 				7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */,
+				7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */,
 				7AC123FD1C89FE8B006EB23F /* Dialogs.swift in Sources */,
 				7ACABEC21C7E6EC500BBEA93 /* ZoomView.swift in Sources */,
 				7AC321921A72B6B700836590 /* RectGraphic.swift in Sources */,
@@ -277,6 +284,7 @@
 				7A9391D11A7AB390005493E6 /* GraphicInspector.swift in Sources */,
 				7A3943471A70343500E1FD94 /* LineGraphic.swift in Sources */,
 				7AC321961A72B75E00836590 /* SelectTool.swift in Sources */,
+				7AA606321C99FD4000933E34 /* TrimTools.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

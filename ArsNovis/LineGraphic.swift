@@ -95,10 +95,6 @@ class LineGraphic: Graphic
         return distanceToPoint(point) < IOTA 
     }
     
-    func intersectionWithLine(line: LineGraphic) -> CGPoint? {
-        return intersectionWithLine(line, extended: false)
-    }
-    
     func isParallelWith(line: LineGraphic) -> Bool {
         return abs(line.angle - angle) < 0.00001
             || abs(line.angle + angle) < 0.00001
@@ -108,7 +104,7 @@ class LineGraphic: Graphic
         return isParallelWith(line) && line.distanceToPoint(origin, extended: true) < 0.00001
     }
     
-    func intersectionWithLine(line: LineGraphic, extended: Bool) -> CGPoint? {
+    func intersectionWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
         if isParallelWith(line) {
             return nil
         }
@@ -124,7 +120,7 @@ class LineGraphic: Graphic
         let t = crossProduct((q - p), s) / rxs
         let u = crossProduct((q - p), r) / rxs
         
-        if !extended && (t < 0 || t > 1.0 || u < 0 || u > 1.0) {
+        if !extendSelf && (t < 0 || t > 1.0) || !extendOther && (u < 0 || u > 1.0) {
             return nil
         }
         
@@ -133,21 +129,25 @@ class LineGraphic: Graphic
     
     override func intersectsWithGraphic(g: Graphic) -> Bool {
         if let g = g as? LineGraphic {
-            return intersectionWithLine(g) != nil
+            return intersectionWithLine(g, extendSelf: false, extendOther: false) != nil
         } else {
             return g.intersectsWithGraphic(self)
         }
     }
     
-    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let g = g as? LineGraphic {
-            if let p = intersectionWithLine(g) {
+            if let p = intersectionWithLine(g, extendSelf: extendSelf, extendOther: extendOther) {
                 return [p]
             }
         } else {
-            return g.intersectionsWithGraphic(self)
+            return g.intersectionsWithGraphic(self, extendSelf: extendOther, extendOther: extendSelf)
         }
         return []
+    }
+    
+    func intersectionWithLine(g: LineGraphic) -> CGPoint? {
+        return intersectionWithLine(g, extendSelf: false, extendOther: false)
     }
     
     override func shouldSelectInRect(rect: CGRect) -> Bool {
@@ -209,6 +209,26 @@ class LineGraphic: Graphic
         return (p - v).length
     }
     
+    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+        let lines = [LineGraphic(origin: origin, endPoint: point), LineGraphic(origin: point, endPoint: endPoint)]
+        
+        return lines
+    }
+    
+    override func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+        var intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true)
+        intersections = intersections.sort { $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint) }
+        if intersections.count > 0 {
+            let intersection = intersections[0]
+            if intersection.distanceToPoint(origin) < intersection.distanceToPoint(endPoint) {
+                return LineGraphic(origin: intersection, endPoint: endPoint)
+            } else {
+                return LineGraphic(origin: origin, endPoint: intersection)
+            }
+        }
+        return self
+    }
+    
     override var inspectionKeys: [String] {
         var keys = super.inspectionKeys
         
@@ -232,6 +252,7 @@ class ConstructionLine: LineGraphic
 {
     override var isConstruction: Bool { return true }
     override var points: [CGPoint] { return [] }
+    var ref: Graphic?
     
     override var description: String { return "Construction @ \(origin), \(endPoint)" }
     
@@ -247,11 +268,17 @@ class ConstructionLine: LineGraphic
     
     var snapOverride: SnapType = SnapType.Align
     
-    override func intersectionWithLine(line: LineGraphic) -> CGPoint? {
-        return intersectionWithLine(line, extended: true)
+    convenience init(origin: CGPoint, endPoint: CGPoint, reference: Graphic?) {
+        self.init(origin: origin, endPoint: endPoint)
+        ref = reference
     }
     
-    override func intersectionWithLine(line: LineGraphic, extended: Bool) -> CGPoint? {
+    convenience init(origin: CGPoint, vector: CGPoint, reference: Graphic?) {
+        self.init(origin: origin, vector: vector)
+        ref = reference
+    }
+
+    override func intersectionWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
         if let line = line as? ConstructionLine {
             if line.origin == origin {
                 return nil
@@ -259,7 +286,7 @@ class ConstructionLine: LineGraphic
         } else if line.origin == origin || line.endPoint == origin || line.center == origin {
             return nil
         }
-        return super.intersectionWithLine(line, extended: extended)
+        return super.intersectionWithLine(line, extendSelf: true, extendOther: extendOther)
     }
 
     override func distanceToPoint(p: CGPoint, extended: Bool = true) -> CGFloat {
@@ -299,7 +326,7 @@ class LineTool: GraphicTool
     
     override func mouseDown(location: CGPoint, view: DrawingView) {
         view.construction = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
-        view.addSnapConstructionsForPoint(location)
+        view.addSnapConstructionsForPoint(location, reference: view.construction, includeAngles: true)
     }
     
     override func mouseDragged(var location: CGPoint, view: DrawingView) {
@@ -313,7 +340,16 @@ class LineTool: GraphicTool
             lg.endPoint = location
             
             view.redrawConstruction()
-            view.addSnapConstructionsForPoint(lg.origin)
+            view.addSnapConstructionsForPoint(lg.origin, reference: lg, includeAngles: true)
+        }
+    }
+    
+    override func mouseUp(location: CGPoint, view: DrawingView) {
+        if let line = view.construction as? LineGraphic {
+            view.removeSnapConstructionsForReference(line)
+            view.addSnapConstructionsForPoint(line.origin, reference: line)
+            view.addSnapConstructionsForPoint(line.endPoint, reference: line)
+            view.addConstruction()
         }
     }
 }

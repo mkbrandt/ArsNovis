@@ -997,6 +997,9 @@ Gw
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <connections>
+                            <action selector="setTrimFromTool:" target="MQl-G6-Nsf" id="BdK-a9-82j"/>
+                        </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HP0-TR-MEJ">
                         <rect key="frame" x="47" y="0.0" width="48" height="48"/>
@@ -1004,6 +1007,9 @@ Gw
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <connections>
+                            <action selector="setTrimToTool:" target="MQl-G6-Nsf" id="sSO-sp-CPm"/>
+                        </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EAm-cl-ADg">
                         <rect key="frame" x="94" y="0.0" width="48" height="48"/>
@@ -1011,6 +1017,9 @@ Gw
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <connections>
+                            <action selector="setBreakTool:" target="MQl-G6-Nsf" id="3ef-Tg-J5C"/>
+                        </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="e4Q-ac-4x6">
                         <rect key="frame" x="47" y="141" width="48" height="48"/>
@@ -1028,6 +1037,9 @@ Gw
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                         </buttonCell>
+                        <connections>
+                            <action selector="setJoinTool:" target="MQl-G6-Nsf" id="Htt-Gn-7Wx"/>
+                        </connections>
                     </button>
                 </subviews>
             </view>

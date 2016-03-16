@@ -153,7 +153,7 @@
                                     <action selector="paste:" target="-1" id="UvS-8e-Qdg"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Delete" id="pa3-QI-u2k">
+                            <menuItem title="Delete" keyEquivalent="" id="pa3-QI-u2k">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="delete:" target="-1" id="0Mk-Ml-PaM"/>
@@ -162,6 +162,17 @@
                             <menuItem title="Select All" keyEquivalent="a" id="Ruw-6m-B2m">
                                 <connections>
                                     <action selector="selectAll:" target="-1" id="VNm-Mi-diN"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="1Vk-8g-YkB"/>
+                            <menuItem title="Group" keyEquivalent="g" id="g6p-ke-99k">
+                                <connections>
+                                    <action selector="group:" target="-1" id="mfD-Io-ewE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Ungroup" keyEquivalent="G" id="Gnq-ce-h65">
+                                <connections>
+                                    <action selector="unGroup:" target="-1" id="YYU-MV-EEH"/>
                                 </connections>
                             </menuItem>
                         </items>

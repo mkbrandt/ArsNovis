@@ -24,12 +24,18 @@ class RectGraphic: Graphic
     
     var width: CGFloat {
         get { return size.width }
-        set { size.width = newValue }
+        set {
+            let newSize = CGSize(width: newValue, height: size.height)
+            size = newSize
+        }
     }
     
     var height: CGFloat {
         get { return size.height }
-        set { size.height = newValue }
+        set {
+            let newSize = CGSize(width: size.width, height: newValue)
+            size = newSize
+        }
     }
     
     override var points: [CGPoint] {
@@ -43,7 +49,7 @@ class RectGraphic: Graphic
     
     override var bounds: CGRect { return NSInsetRect(CGRect(origin: origin, size: size), -lineWidth, -lineWidth) }
     
-    required override init(origin: CGPoint) {
+    override init(origin: CGPoint) {
         size = NSSize(width: 0, height: 0)
         super.init(origin: origin)
     }
@@ -66,8 +72,8 @@ class RectGraphic: Graphic
     override func setPoint(point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
-            size.width -= point.x - origin.x
-            size.height -= point.y - origin.y
+            let newSize = CGSize(width: size.width - (point.x - origin.x), height: size.height - (point.y - origin.y))
+            size = newSize
             origin = point;
         case 1:
             size.width = point.x - origin.x
@@ -105,9 +111,9 @@ class RectGraphic: Graphic
         return sides.reduce(false, combine: { return $0 || $1.intersectsWithGraphic(g) })
     }
     
-    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         
-        return Array(sides.map({ $0.intersectionsWithGraphic(g) }).flatten())
+        return Array(sides.map({ $0.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther) }).flatten())
     }
    
     override func snapCursor(location: CGPoint) -> SnapResult? {
@@ -150,8 +156,8 @@ class ElipseGraphic: RectGraphic
         cachedPath = NSBezierPath(ovalInRect: CGRect(origin: origin, size: size))
     }
     
-    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
-        return simpleIntersectionsWithGraphic(g)
+    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+        return simpleIntersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
     }
     
     override func snapCursor(location: CGPoint) -> SnapResult? {

@@ -31,6 +31,10 @@ class SelectTool: GraphicTool
         view.setDrawingHint("Select objects")
     }
     
+    override func escape(view: DrawingView) {
+        view.selection = []
+    }
+    
     override func mouseDown(location: CGPoint, view: DrawingView) {
         let handleSize = view.scaleFloat(HSIZE)
         mode = SelectionMode.Select

@@ -53,6 +53,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     var lineColor = NSColor.blackColor()
     var fillColor: NSColor?
     var cachedPath: NSBezierPath?
+    var showHandles = false             { didSet { cachedPath = nil }}
     
     var isConstruction: Bool { return false }       // return true when this graphic is a temporary construction line
     
@@ -256,6 +257,10 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
                 g.drawInView(view)
             }
         }
+        
+        if showHandles {
+            drawHandlesInView(view)
+        }
     }
     
     /// Test whether a graphic lies within a rectangle.
@@ -294,22 +299,22 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     }
     
     func intersectsWithGraphic(g: Graphic) -> Bool {
-        return intersectionsWithGraphic(g).count > 0
+        return intersectionsWithGraphic(g, extendSelf: false, extendOther: false).count > 0
     }
     
-    func simpleIntersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+    func simpleIntersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let bp = BezierGraphic(path: path) {
-            return bp.intersectionsWithGraphic(g)
+            return bp.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
         }
         return []
     }
     
-    func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
-        return simpleIntersectionsWithGraphic(g)
+    func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+        return simpleIntersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
     }
     
     func closestIntersectionWithGraphic(g: Graphic, toPoint p: CGPoint) -> CGPoint? {
-        let points = intersectionsWithGraphic(g)
+        let points = intersectionsWithGraphic(g, extendSelf: false, extendOther: false)
         
         if points.count == 0 {
             return nil
@@ -318,6 +323,8 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
+    /// Snap the cursor to the graphic if within the SnapRadius
+    
     func snapCursor(location: CGPoint) -> SnapResult? {
         for point in points {
             if point.distanceToPoint(location) < SnapRadius {
@@ -325,6 +332,35 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
             }
         }
         return nil
+    }
+    
+    /// Scale the graphic
+    
+    func scalePoint(point: CGPoint, fromRect: CGRect, toRect: CGRect) -> CGPoint {
+        let hscale = toRect.size.width / fromRect.size.width
+        let vscale = toRect.size.height / fromRect.size.height
+        let offset = point - fromRect.origin
+        let scaledOffset = CGPoint(x: offset.x * hscale, y: offset.y * vscale)
+        
+        return toRect.origin + scaledOffset
+    }
+    
+    func scaleFromRect(fromRect: CGRect, toRect: CGRect) {
+        for i in 0 ..< points.count {
+            let p = scalePoint(points[i], fromRect: fromRect, toRect: toRect)
+            
+            setPoint(p, atIndex: i)
+        }
+    }
+    
+    /// trim help
+    
+    func divideAtPoint(point: CGPoint) -> [Graphic] {
+        return [self]
+    }
+    
+    func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+        return self
     }
 }
 
@@ -340,6 +376,11 @@ class GraphicTool: NSObject
     
     /// called when the tool is made the current tool
     func selectTool(view: DrawingView)
+    {
+    }
+    
+    // escape pressed - end any creation
+    func escape(view: DrawingView)
     {
     }
     

@@ -132,7 +132,6 @@ class BezierSegment
 class BezierGraphic: Graphic
 {
     var arcs: [BezierArcTo] = []    { didSet { cachedPath = nil }}
-    var showHandles = false         { didSet { cachedPath = nil }}
     
     override var points: [CGPoint] {
         var pts = [origin]
@@ -143,7 +142,11 @@ class BezierGraphic: Graphic
     }
     
     override var bounds: CGRect {
-        return rectContainingPoints(points).insetBy(dx: -lineWidth, dy: -lineWidth)
+        if showHandles {
+            return rectContainingPoints(points).insetBy(dx: -lineWidth, dy: -lineWidth)
+        } else {
+            return path.bounds
+        }
     }
     
     var segments: [BezierSegment] {
@@ -244,13 +247,6 @@ class BezierGraphic: Graphic
         path.stroke()
     }
     
-    override func drawInView(view: DrawingView) {
-        super.drawInView(view)
-        if showHandles {
-            drawHandlesInView(view)
-        }
-    }
-
     override func setPoint(point: CGPoint, atIndex index: Int) {
         if index == 0 {
             let delta = point - origin
@@ -283,12 +279,16 @@ class BezierGraphic: Graphic
     }
 
     override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
-        let points = segments.map { return $0.closestPointToPoint(point) }
+        var points = segments.map { return $0.closestPointToPoint(point) }
+        
+        if showHandles {
+            points = self.points + points
+        }
         
         return points.sort({ return $0.distanceToPoint(point) < $1.distanceToPoint(point) })[0]
     }
     
-    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         var graphic: BezierGraphic
         if let g = g as? BezierGraphic {
             graphic = g
@@ -320,6 +320,13 @@ class BezierGraphic: Graphic
         }
         return nil
     }
+    
+    override func shouldSelectInRect(rect: CGRect) -> Bool {
+        if bounds.intersect(rect) == bounds {                   // if completely inside
+            return true
+        }
+        return intersectionsWithGraphic(RectGraphic(origin: rect.origin, size: rect.size), extendSelf: false, extendOther: false).count > 0
+    }
 }
 
 enum BezierToolState {
@@ -338,6 +345,19 @@ class BezierTool: GraphicTool
     override func selectTool(view: DrawingView) {
         view.construction = nil
         view.setDrawingHint("Drawing Bezier Paths")
+    }
+    
+    override func escape(view: DrawingView) {
+        if let construct = view.construction as? BezierGraphic {
+            if construct.arcs.count > 1 {
+                construct.arcs.removeLast()
+                construct.showHandles = false
+                view.addConstruction()
+            } else {
+                view.construction = nil
+            }
+            view.needsDisplay = true
+        }
     }
     
     override func mouseDown(location: CGPoint, view: DrawingView) {

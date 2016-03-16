@@ -43,7 +43,7 @@ class ArcGraphic: Graphic
             let l1 = LineGraphic(origin: p1, vector: v1)
             let l2 = LineGraphic(origin: p2, vector: v2)
             
-            let p = l1.intersectionWithLine(l2, extended: true)
+            let p = l1.intersectionWithLine(l2, extendSelf: true, extendOther: true)
             if p != nil {
                 return p!
             }
@@ -145,7 +145,7 @@ class ArcGraphic: Graphic
         return rv
     }
     
-    func intersectionsWithLine(line: LineGraphic) -> [CGPoint] {
+    func intersectionsWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         var points: [CGPoint]
         let p = line.closestPointToPoint(center, extended: true)
         let dist = p.distanceToPoint(center)
@@ -164,7 +164,7 @@ class ArcGraphic: Graphic
         var intersections: [CGPoint] = []
         
         for point in points {
-            if line.pointOnLine(point) && pointOnArc(point) {
+            if (extendOther || line.pointOnLine(point)) && (extendSelf || pointOnArc(point)) {
                 intersections.append(point)
             }
         }
@@ -172,7 +172,7 @@ class ArcGraphic: Graphic
         return intersections
     }
     
-    func intersectionsWithArc(arc: ArcGraphic) -> [CGPoint] {
+    func intersectionsWithArc(arc: ArcGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         let d = center.distanceToPoint(arc.center)
         if d == 0 {
             return []
@@ -198,17 +198,19 @@ class ArcGraphic: Graphic
             intersections = [center + va + vh, center + va - vh]
         }
 
-        intersections = intersections.filter { return pointOnArc($0) && arc.pointOnArc($0) }
+        if !extendSelf {
+            intersections = intersections.filter { return pointOnArc($0) && arc.pointOnArc($0) }
+        }
         return intersections
     }
     
-    override func intersectionsWithGraphic(g: Graphic) -> [CGPoint] {
+    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let arc = g as? ArcGraphic {
-            return intersectionsWithArc(arc)
+            return intersectionsWithArc(arc, extendSelf: extendSelf, extendOther: extendOther)
         } else if let line = g as? LineGraphic {
-            return intersectionsWithLine(line)
+            return intersectionsWithLine(line, extendSelf: extendSelf, extendOther: extendOther)
         } else if let rect = g as? RectGraphic {
-            return rect.sides.reduce([], combine: {$0 + intersectionsWithLine($1)})
+            return rect.sides.reduce([], combine: {$0 + intersectionsWithLine($1, extendSelf: extendSelf, extendOther: extendOther)})
         }
         return []
     }
@@ -228,7 +230,7 @@ class ArcGraphic: Graphic
     }
     
     func intersectsWithLine(line: LineGraphic) -> Bool {
-        return intersectionsWithLine(line).count > 0
+        return intersectionsWithLine(line, extendSelf: false, extendOther: false).count > 0
     }
     
     override func shouldSelectInRect(rect: CGRect) -> Bool {

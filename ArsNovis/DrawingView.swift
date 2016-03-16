@@ -37,7 +37,11 @@ class DrawingView: ZoomView
     }
     
     var selection: [Graphic] = [] {
+        willSet {
+            selection.forEach { $0.showHandles = false }
+        }
         didSet {
+            selection.forEach { $0.showHandles = true }
             if selection.count == 1 {
                 inspector?.beginInspection(selection[0])
             } else {
@@ -74,6 +78,15 @@ class DrawingView: ZoomView
         get { return document.layer.snapToGrid }
         set { document.layer.snapToGrid = newValue }
     }
+    
+    var defaultSnapAngles = [
+        CGPoint(length: 1.0, angle: PI / 6),
+        CGPoint(length: 1.0, angle: PI / 4),
+        CGPoint(length: 1.0, angle: PI / 3),
+        CGPoint(length: 1.0, angle: 2 * PI / 3),
+        CGPoint(length: 1.0, angle: 3 * PI / 4),
+        CGPoint(length: 1.0, angle: 5 * PI / 6)
+    ]
     
     var cursorNote = ""
     var snappedCursor: SnapResult?
@@ -248,7 +261,6 @@ class DrawingView: ZoomView
     override func drawRect(dirtyRect: CGRect)
     {
         context = NSGraphicsContext.currentContext()?.CGContext
-        let handleSize = scaleFloat(HSIZE)
         
         NSEraseRect(dirtyRect)
         drawBorder(dirtyRect)
@@ -282,14 +294,6 @@ class DrawingView: ZoomView
             }
         }
         
-        for g in selection
-        {
-            if needsToDrawRect(NSInsetRect(g.bounds, -handleSize / 2.0, -handleSize / 2.0))
-            {
-                drawHandlesForGraphic(g)
-            }
-        }
-        
         construction?.drawInView(self)
         
         if !selectionRect.isEmpty
@@ -305,22 +309,6 @@ class DrawingView: ZoomView
         
         drawSnappedCursor()
         //super.drawRect(dirtyRect)
-    }
-    
-    func drawHandleAtPoint(point: CGPoint)
-    {
-        let hsize = scaleFloat(HSIZE)
-        let x = point.x - hsize / 2
-        let y = point.y - hsize / 2
-        let handleSize = CGSize(width: hsize, height: hsize)
-        let handleRect = CGRect(origin: CGPoint(x: x, y: y), size: handleSize)
-        NSColor.blackColor().set()
-        NSRectFill(handleRect)
-    }
-    
-    func drawHandlesForGraphic(graphic: Graphic)
-    {
-        graphic.drawHandlesInView(self)
     }
     
     func setDrawingHint(hint: String)
@@ -460,7 +448,7 @@ class DrawingView: ZoomView
             if snapSelected || !selection.contains(g) {
                 if let snap = g.snapCursor(p) {
                     if snap.type == .EndPoint || snap.type == .Center {
-                        addSnapConstructionsForPoint(snap.location)
+                        addSnapConstructionsForPoint(snap.location, reference: g)
                     }
                     result = snap
                     snappedObjects.append(g)
@@ -475,7 +463,7 @@ class DrawingView: ZoomView
                     if let cp = a.closestIntersectionWithGraphic(b, toPoint: p) {
                         if cp.distanceToPoint(p) < SnapRadius {
                             if !a.isConstruction && !b.isConstruction {
-                                addSnapConstructionsForPoint(cp)
+                                addSnapConstructionsForPoint(cp, reference: a)
                             }
                             result = SnapResult(location: cp, type: .Intersection)
                             break
@@ -490,10 +478,10 @@ class DrawingView: ZoomView
         return result
     }
     
-    func addSnapConstructionsForPoint(p: CGPoint) {
+    func addSnapConstructionsForPoint(p: CGPoint, reference: Graphic?, includeAngles: Bool = false) {
         let smallDistance = scaleFloat(10)
-        let horizontal = ConstructionLine(origin: p, vector: CGPoint(x: 1, y: 0))
-        let vertical = ConstructionLine(origin: p, vector: CGPoint(x: 0, y: 1))
+        let horizontal = ConstructionLine(origin: p, vector: CGPoint(x: 1, y: 0), reference: reference)
+        let vertical = ConstructionLine(origin: p, vector: CGPoint(x: 0, y: 1), reference: reference)
         
         snapConstructions = snapConstructions.filter {
             if $0.vector.x == 0 && abs($0.origin.x - p.x) < smallDistance
@@ -504,7 +492,13 @@ class DrawingView: ZoomView
             return true
         }
         
-        snapConstructions.insertContentsOf([horizontal, vertical], at: 0)
+        var snaps = [horizontal, vertical]
+        
+        if includeAngles {
+            snaps += defaultSnapAngles.map { return ConstructionLine(origin: p, vector: $0) }
+        }
+        
+        snapConstructions.insertContentsOf(snaps, at: 0)
 
         while snapConstructions.count > 10 {
             let old = snapConstructions.removeLast()
@@ -512,6 +506,10 @@ class DrawingView: ZoomView
                 setNeedsDisplayInRect(old.bounds)
             }
         }
+    }
+    
+    func removeSnapConstructionsForReference(ref: Graphic?) {
+        snapConstructions = snapConstructions.filter { return $0.ref != ref }
     }
 
 // MARK: Mouse Handling
@@ -579,7 +577,7 @@ class DrawingView: ZoomView
     
     override func mouseExited(theEvent: NSEvent)
     {
-        tool.cursor().pop()
+        //tool.cursor().pop()
     }
 
 // MARK: Keyboard Handling
@@ -593,6 +591,13 @@ class DrawingView: ZoomView
         {
         case "\t":
             inspector?.beginEditing()
+        case "\u{1b}":
+            if construction != nil || selection.count > 0 {
+                tool.escape(self)
+            } else {
+                setSelectTool(self)
+            }
+            needsDisplay = true
         case "b":
             setBezierTool(self)
         case "e":
@@ -687,6 +692,34 @@ class DrawingView: ZoomView
         window?.invalidateCursorRectsForView(self)
     }
     
+    @IBAction func setTrimToTool(sender: AnyObject?) {
+        tool = TrimToTool()
+        menuButton.image = NSImage(named: "TrimTo")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setTrimFromTool(sender: AnyObject?) {
+        tool = TrimFromTool()
+        menuButton.image = NSImage(named: "TrimFrom")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setBreakTool(sender: AnyObject?) {
+        tool = BreakAtTool()
+        menuButton.image = NSImage(named: "BreakAt")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setJoinTool(sender: AnyObject?) {
+        tool = JoinTool()
+        menuButton.image = NSImage(named: "CornerTrim")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
     @IBAction func setSelectTool(sender: AnyObject?) {
         tool = SelectTool()
         menuButton.image = NSImage(named: "SelectTool")
@@ -726,6 +759,30 @@ class DrawingView: ZoomView
     @IBAction func delete(sender: AnyObject?) {
         deleteSelection()
         snapConstructions = []
+    }
+    
+    @IBAction func group(sender: AnyObject?) {
+        if selection.count > 1 {
+            let newGroup = GroupGraphic(contents: selection)
+            deleteSelection()
+            addGraphic(newGroup)
+            selection = [newGroup]
+        }
+    }
+    
+    @IBAction func unGroup(sender: AnyObject?) {
+        var newSelection: [Graphic] = []
+        
+        for g in selection {
+            if let g = g as? GroupGraphic {
+                deleteGraphic(g)
+                addGraphics(g.contents)
+                newSelection.appendContentsOf(g.contents)
+            } else {
+                newSelection.append(g)
+            }
+        }
+        selection = newSelection
     }
     
 // MARK: Display List Maintenance
