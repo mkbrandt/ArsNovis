@@ -54,6 +54,8 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     var fillColor: NSColor?
     var cachedPath: NSBezierPath?
     var showHandles = false             { didSet { cachedPath = nil }}
+    var isActive = true
+    var ref: [Graphic] = []
     
     var isConstruction: Bool { return false }       // return true when this graphic is a temporary construction line
     
@@ -187,7 +189,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     {
         let op = points
         
-        for var i = 0; i < op.count; ++i
+        for i in 0 ..< op.count
         {
             setPoint(op[i] + vector, atIndex: i)
         }
@@ -362,6 +364,11 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
         return self
     }
+    
+    /// resize snaps
+    
+    func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
+    }
 }
 
 /// A graphic factory using mouse events
@@ -382,6 +389,10 @@ class GraphicTool: NSObject
     // escape pressed - end any creation
     func escape(view: DrawingView)
     {
+        view.selection = []
+        view.snapConstructions = []
+        view.construction = nil
+        view.setSelectTool(self)
     }
     
     /// called when a mouseDown event happens

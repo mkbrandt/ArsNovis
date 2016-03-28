@@ -26,7 +26,7 @@ enum GridMode: Int {
     case Never = 0, Selected = 1, Always = 2
 }
 
-var measurementUnits: MeasurementUnits = .Feet_dec
+var measurementUnits: MeasurementUnits = .Feet_frac
 
 class ArsLayer: NSObject, NSCoding
 {
@@ -100,6 +100,7 @@ class ArsLayer: NSObject, NSCoding
 class ArsPage: NSObject, NSCoding
 {
     var name = "untitled"
+    var parametricContext = ParametricContext()
     var pageRect: CGRect?
     var pageScale: CGFloat = 1.0
     var layers: [ArsLayer] = [ArsLayer(name: "Main")]
@@ -161,11 +162,14 @@ class ArsPage: NSObject, NSCoding
     }
     
     init(name: String, printInfo: NSPrintInfo?) {
+        super.init()
         self.name = name
         if let printInfo = printInfo {
             let sizeDiff = printInfo.paperSize - printInfo.imageablePageBounds.size
             borderInset = max(sizeDiff.width, sizeDiff.height) / 2
         }
+        parametricContext.setValue(CGFloat(120), forUndefinedKey: "test1")
+        parametricContext.setValue(CGFloat(200), forUndefinedKey: "test2")
     }
     
     required init?(coder decoder: NSCoder) {
@@ -325,6 +329,8 @@ class ArsDocument: NSDocument
             savedWindowFrame = newValue.windowFrame
             savedScale = newValue.scale
             savedCenterPoint = newValue.centeredPoint
+            currentPage = 0
+            currentLayer = 0
         }
     }
     
@@ -366,6 +372,23 @@ class ArsDocument: NSDocument
                 currentPage = index
             }
         }
+    }
+    
+    var parametricContext: ParametricContext {
+        if let pcontext = drawingView?.parametricContext {
+            return pcontext
+        }
+        return page.parametricContext
+    }
+    
+    var parametricVariables: [ParametricVariable] {
+        let pc = parametricContext
+        print("Context has \(pc.variables.count) variables")
+        return pc.variables
+    }
+    
+    class func keyPathsForValuesAffectingParametricVariables() -> Set<String> {
+        return ["layer", "page", "drawingView.parametricContext"]
     }
     
     override init()
@@ -439,7 +462,7 @@ class ArsDocument: NSDocument
             drawingView.constrainViewToSuperview = false        // allow random zooming
             printSaveZoomState = drawingView.zoomState
             drawingView.zoomToAbsoluteScale(0.72 * page.pageScale * printInfo.scalingFactor)
-            printDocumentWithSettings([:], showPrintPanel: true, delegate: self, didPrintSelector: "document:didPrintSuccessfully:contextInfo:", contextInfo: nil)
+            printDocumentWithSettings([:], showPrintPanel: true, delegate: self, didPrintSelector: #selector(ArsDocument.document(_:didPrintSuccessfully:contextInfo:)), contextInfo: nil)
         }
     }
     

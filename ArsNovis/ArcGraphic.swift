@@ -53,6 +53,18 @@ class ArcGraphic: Graphic
     
     var radius: CGFloat {
         get { return (center - origin).length }
+        set {
+            willChangeValueForKey("startAngle")
+            willChangeValueForKey("endAngle")
+            let cp = center
+            let ea = endAngle
+            let ma = (midPoint - center).angle
+            origin = cp + CGPoint(length: newValue, angle: startAngle)
+            midPoint = cp + CGPoint(length: newValue, angle: ma)
+            endPoint = cp + CGPoint(length: newValue, angle: ea)
+            didChangeValueForKey("startAngle")
+            didChangeValueForKey("endAngle")
+        }
     }
     
     var startAngle: CGFloat {
@@ -99,6 +111,23 @@ class ArcGraphic: Graphic
             }
             let b = cachedPath!.bounds
             return NSInsetRect(b, -lineWidth, -lineWidth)
+        }
+    }
+    
+    override var inspectionKeys: [String] {
+        return ["center", "radius", "startAngle", "endAngle"]
+    }
+    
+    override var defaultInspectionKey: String {
+        return "radius"
+    }
+    
+    override func transformerForKey(key: String) -> NSValueTransformer {
+        switch key {
+        case "startAngle", "endAngle":
+            return AngleTransformer()
+        default:
+            return DistanceTransformer()
         }
     }
     
@@ -296,6 +325,37 @@ class ArcGraphic: Graphic
             cachedPath.moveToPoint(origin)
             cachedPath.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
         }
+    }
+    
+    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+        let pointVector = point - center
+        let arc1 = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: pointVector.angle)
+        let arc2 = ArcGraphic(center: center, radius: radius, startAngle: pointVector.angle, endAngle: endAngle)
+        return [arc1, arc2]
+    }
+    
+    override func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+        let intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true).sort {
+            $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint)
+        }
+        if intersections.count > 0 {
+            let intersection = intersections[0]
+            
+            if closeToPoint.distanceToPoint(origin) < closeToPoint.distanceToPoint(endPoint) {
+                return ArcGraphic(origin: intersection, midPoint: midPoint, endPoint: endPoint)
+            } else {
+                return ArcGraphic(origin: origin, midPoint: midPoint, endPoint: intersection)
+            }
+        }
+        return self
+    }
+    
+    override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
+        let circle = ElipseGraphic(origin: center - CGPoint(x: radius, y: radius), size: CGSize(width: radius * 2, height: radius * 2))
+        circle.lineColor = NSColor.blueColor().colorWithAlphaComponent(0.5)
+        circle.lineWidth = 0.0
+        circle.ref = [self]
+        toView.addSnapConstructions([circle])
     }
 }
 

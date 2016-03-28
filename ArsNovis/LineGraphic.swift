@@ -229,6 +229,16 @@ class LineGraphic: Graphic
         return self
     }
     
+    func insetBy(distance: CGFloat) -> LineGraphic {
+        let insetVector = CGPoint(length: distance, angle: angle)
+        return LineGraphic(origin: origin + insetVector, vector: vector - insetVector)
+    }
+    
+    override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView view: DrawingView) {
+        let line = ConstructionLine(origin: center, vector: CGPoint(length: 1, angle: vector.angle), reference: [self])
+        view.addSnapConstructions([line])
+    }
+    
     override var inspectionKeys: [String] {
         var keys = super.inspectionKeys
         
@@ -252,11 +262,16 @@ class ConstructionLine: LineGraphic
 {
     override var isConstruction: Bool { return true }
     override var points: [CGPoint] { return [] }
-    var ref: Graphic?
-    
+    var constrainedAngle: CGFloat = 0
+
+    override var angle: CGFloat {
+        get { return constrainedAngle }
+        set {  }
+    }
+
     override var description: String { return "Construction @ \(origin), \(endPoint)" }
     
-    var isActive = false {
+    override var isActive: Bool {
         didSet {
             if isActive {
                 lineColor = NSColor.blueColor().colorWithAlphaComponent(0.5)
@@ -268,14 +283,18 @@ class ConstructionLine: LineGraphic
     
     var snapOverride: SnapType = SnapType.Align
     
-    convenience init(origin: CGPoint, endPoint: CGPoint, reference: Graphic?) {
+    convenience init(origin: CGPoint, endPoint: CGPoint, reference: [Graphic]) {
         self.init(origin: origin, endPoint: endPoint)
         ref = reference
+        constrainedAngle = super.angle
+        isActive = false
     }
     
-    convenience init(origin: CGPoint, vector: CGPoint, reference: Graphic?) {
+    convenience init(origin: CGPoint, vector: CGPoint, reference: [Graphic]) {
         self.init(origin: origin, vector: vector)
         ref = reference
+        constrainedAngle = super.angle
+        isActive = false
     }
 
     override func intersectionWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
@@ -294,6 +313,8 @@ class ConstructionLine: LineGraphic
     }
 
     override func snapCursor(location: CGPoint) -> SnapResult? {
+        length = 1
+        super.angle = constrainedAngle
         let p = closestPointToPoint(location, extended: true)
         if p.distanceToPoint(location) < SnapRadius {
             endPoint = p
@@ -325,12 +346,14 @@ class LineTool: GraphicTool
     }
     
     override func mouseDown(location: CGPoint, view: DrawingView) {
-        view.construction = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
-        view.addSnapConstructionsForPoint(location, reference: view.construction, includeAngles: true)
+        let line = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
+        view.construction = line
+        view.addSnapConstructionsForPoint(location, reference: [line], includeAngles: true)
     }
     
-    override func mouseDragged(var location: CGPoint, view: DrawingView) {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
         if let lg = view.construction as? LineGraphic {
+            var location = location
             view.redrawConstruction()
             
             if view.shiftKeyDown {
@@ -340,15 +363,15 @@ class LineTool: GraphicTool
             lg.endPoint = location
             
             view.redrawConstruction()
-            view.addSnapConstructionsForPoint(lg.origin, reference: lg, includeAngles: true)
+            view.addSnapConstructionsForPoint(lg.origin, reference: [lg], includeAngles: true)
         }
     }
     
     override func mouseUp(location: CGPoint, view: DrawingView) {
         if let line = view.construction as? LineGraphic {
             view.removeSnapConstructionsForReference(line)
-            view.addSnapConstructionsForPoint(line.origin, reference: line)
-            view.addSnapConstructionsForPoint(line.endPoint, reference: line)
+            view.addSnapConstructionsForPoint(line.origin, reference: [line])
+            view.addSnapConstructionsForPoint(line.endPoint, reference: [line])
             view.addConstruction()
         }
     }

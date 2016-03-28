@@ -13,9 +13,24 @@ import Foundation
     var inches_RE = RegularExpression(pattern: "([[:digit:]\\.]*)(\")")
     var feet_inches_RE = RegularExpression(pattern: "([[:digit:]\\.]*)'[[:space:]]*([[:digit:]\\.]*)\"?")
     var mm_RE = RegularExpression(pattern: "([[:digit:]\\.]*)mm")
+    var frac_RE = RegularExpression(pattern: "([[:digit:]]*)[[:space:]]*/[[:space:]]*([[:digit:]]*)")
     
     override class func allowsReverseTransformation() -> Bool {
         return true
+    }
+    
+    func fractionString(f: Double) -> NSString {
+        let oneSixtyFourth = 1.0 / 64.0
+        var numerator = Int(round(f / oneSixtyFourth))
+        if numerator == 0 {
+            return ""
+        }
+        var denominator = 64
+        while numerator % 2 == 0 {
+            numerator /= 2
+            denominator /= 2
+        }
+        return NSString(format: "%d/%d", numerator, denominator)
     }
     
     override func transformedValue(value: AnyObject?) -> AnyObject? {
@@ -23,6 +38,22 @@ import Foundation
             var v = n.doubleValue
             
             switch measurementUnits {
+            case .Inches_frac:
+                v /= 100.0
+                let whole = Int(v)
+                let frac = v - Double(whole)
+                let fracStr = fractionString(frac)
+                return NSString(format: "%d %s\"", whole, fracStr)
+            case .Feet_frac:
+                v /= 100.0
+                let ft = Int(v) / 12
+                let inches = Int(v - Double(ft) * 12.0)
+                let frac = v - Double(ft * 12 + inches)
+                if ft > 0 {
+                    return NSString(format: "%d'%d %@\"", ft, inches, fractionString(frac))
+                } else {
+                    return NSString(format: "%d %@\"", inches, fractionString(frac))
+                }
             case .Inches_dec:
                 v /= 100.0
                 return NSString(format: "%0.6g\"", v)
@@ -60,16 +91,30 @@ import Foundation
                         value += v
                     }
                 }
+                if frac_RE.matchesWithString(feet_inches_RE.suffix) {
+                    if let num_s = frac_RE.match(1), let denom_s = frac_RE.match(2),
+                        let numerator = Double(num_s), let denominator = Double(denom_s) {
+                            value += numerator / denominator
+                    }
+                }
                 return value * 100
             }
             
             if inches_RE.matchesWithString(s) {
+                var value = 0.0
                 if let inString = inches_RE.match(1) {
                     if let v = Double(inString) {
-                        return v * 100
+                        value = v * 100
                     }
                 }
-            }
+                if frac_RE.matchesWithString(inches_RE.suffix) {
+                    if let num_s = frac_RE.match(1), let denom_s = frac_RE.match(2),
+                        let numerator = Double(num_s), let denominator = Double(denom_s) {
+                            value += numerator / denominator
+                    }
+                }
+                return value
+           }
             
             if mm_RE.matchesWithString(s) {
                 if let mmString = mm_RE.match(1) {
@@ -129,120 +174,3 @@ func stringFromDistance(d: CGFloat) -> String {
     return "-0"
 }
 
-enum ParseToken {
-    case Number(CGFloat)
-    case ID(String)
-    case Operator(String)
-    case Error(String)
-}
-
-class StringParser
-{
-    let EOF: Character = "\0"
-    var content = ""
-    var location: String.Index
-    var lastch: Character {
-        if location == content.endIndex {
-            return EOF
-        }
-        return content[location]
-    }
-    
-    init(string: String) {
-        content = string
-        location = content.startIndex
-    }
-    
-    func nextch() {
-        if lastch != EOF {
-            location = location.successor()
-        }
-    }
-    
-    func skipSpace() {
-        while lastch == " " || lastch == "\n" || lastch == "\t" {
-            nextch()
-        }
-    }
-    
-    func isUpperCase(c: Character) -> Bool {
-        switch c {
-        case "A"..."Z":
-            return true
-        default:
-            return false
-        }
-    }
-    
-    func isLowerCase(c: Character) -> Bool {
-        switch c {
-        case "a"..."z":
-            return true
-        default:
-            return false
-        }
-    }
-    
-    func isDigit(c: Character) -> Bool {
-        switch c {
-        case "0"..."9":
-            return true
-        default:
-            return false
-        }
-    }
-    
-    func isAlpha(c: Character) -> Bool { return isUpperCase(c) || isLowerCase(c) }
-    func isAlphaNumeric(c: Character) -> Bool { return isAlpha(c) || isDigit(c) }
-    
-    func nextToken() -> ParseToken {
-        skipSpace()
-        switch lastch {
-        case "A"..."Z", "a"..."Z":
-            var s = ""
-            while isAlphaNumeric(lastch) {
-                s.append(lastch)
-                nextch()
-            }
-            return .ID(s)
-        case "0"..."9":
-            var s = ""
-            while isDigit(lastch) {
-                s.append(lastch)
-                nextch()
-            }
-            if lastch == "." {
-                s.append(lastch)
-                nextch()
-                while isDigit(lastch) {
-                    s.append(lastch)
-                    nextch()
-                }
-            }
-            if lastch == "e" || lastch == "E" {
-                s.append(lastch)
-                nextch()
-                if lastch == "-" {
-                    s.append(lastch)
-                    nextch()
-                }
-                while isDigit(lastch) {
-                    s.append(lastch)
-                    nextch()
-                }
-            }
-            if let v = Double(s) {
-                return .Number(CGFloat(v))
-            }
-            return .Error("bad number")
-        case "+", "-", "*", "/", "(", ")", "\"", "'":
-            let op = String(lastch)
-            nextch()
-            return .Operator(op)
-        default:
-            let char = lastch
-            nextch()
-            return .Error("bad char '\(char)")
-        }
-    }
-}

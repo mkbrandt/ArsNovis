@@ -9,7 +9,7 @@
 import Foundation
 
 let IOTA: CGFloat = 0.000000001
-let PI: CGFloat = 3.14159265357
+let PI: CGFloat = CGFloat(M_PI)
 
 // MARK: Point Math
 
@@ -102,13 +102,32 @@ func sign(f: CGFloat) -> CGFloat {
     return 1
 }
 
+func normalizeAngle(angle: CGFloat) -> CGFloat {
+    var angle = angle
+    while angle > PI {
+        angle -= 2 * PI
+    }
+    while angle < -PI {
+        angle += 2 * PI
+    }
+    return angle
+}
+
 // MARK: Class Extensions
 
 extension CGPoint
 {
     init(length: CGFloat, angle: CGFloat) {
-        let x0 = length * cos(angle)
-        let y0 = length * sin(angle)
+        var cosa = cos(angle)
+        if abs(cosa) < 1e-15 {
+            cosa = 0
+        }
+        var sina = sin(angle)
+        if abs(sina) < 1e-15 {
+            sina = 0
+        }
+        let x0 = length * cosa
+        let y0 = length * sina
         self.init(x: x0, y: y0)
     }
     
@@ -125,8 +144,16 @@ extension CGPoint
         get { return atan2(y, x) }
         set {
             let len = length
-            x = len * cos(newValue)
-            y = len * sin(newValue)
+            var cosa = cos(newValue)            // cos(acos(0)) is not zero!
+            if abs(cosa) < 1e-15 {
+                cosa = 0
+            }
+            var sina = sin(newValue)
+            if abs(sina) < 1e-15 {
+                sina = 0
+            }
+            x = len * cosa
+            y = len * sina
         }
     }
     

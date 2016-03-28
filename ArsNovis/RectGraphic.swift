@@ -185,7 +185,8 @@ class RectTool: GraphicTool
         view.construction = RectGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
     
-    override func mouseDragged(var location: CGPoint, view: DrawingView) {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
+        var location = location
         if view.shiftKeyDown {
             location = constrainTo45Degrees(location, relativeToPoint: startPoint)
         }
@@ -218,7 +219,8 @@ class CenterRectTool: GraphicTool
         view.construction = RectGraphic(origin: location, size: NSSize(width: 0, height: 0))
     }
     
-    override func mouseDragged(var location: CGPoint, view: DrawingView) {
+    override func mouseDragged(location: CGPoint, view: DrawingView) {
+        var location = location
         if view.shiftKeyDown {
             location = constrainTo45Degrees(location, relativeToPoint: startPoint)
         }

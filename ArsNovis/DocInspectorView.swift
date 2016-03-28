@@ -243,3 +243,8 @@ class LayerInspectorView: NSView
         document.layerEnableChanged(sender)
     }    
 }
+
+class ParametricInspectorView: NSView
+{
+    @IBOutlet var document: ArsDocument!
+}

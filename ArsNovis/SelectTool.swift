@@ -47,12 +47,13 @@ class SelectTool: GraphicTool
                 view.selection = [g]
                 view.setNeedsDisplayInRect(view.bounds)
             } else if view.selection.count == 1 {
-                for var i = 0; i < g.points.count; ++i {
+                for i in 0 ..< g.points.count {
                     let p = g.points[i]
                     if p.distanceToPoint(location) < handleSize {
                         selectedGraphic = g
                         selectedHandle = i
                         mode = SelectionMode.MoveHandle
+                        g.addReshapeSnapConstructionsAtPoint(p, toView: view)
                         break
                     }
                 }
@@ -94,6 +95,7 @@ class SelectTool: GraphicTool
     }
     
     override func mouseUp(location: CGPoint, view: DrawingView) {
+        view.removeSnapConstructionsForReference(selectedGraphic)
         if mode == SelectionMode.Select {
             view.selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
             view.selectObjectsInRect(rectContainingPoints([selectOrigin, location]))

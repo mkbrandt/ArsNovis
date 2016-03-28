@@ -61,7 +61,7 @@ class WDTabBarButton: NSView
         label.enabled = true
         label.bordered = false
         label.drawsBackground = false
-        label.action = "endEditing:"
+        label.action = #selector(WDTabBarButton.endEditing(_:))
         label.target = self
         label.alignment = NSTextAlignment.Center
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -182,7 +182,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
             buttonLayouts.append(centers)
         }
         
-        for var i = 1; i < tabs.count; ++i {
+        for i in 1 ..< tabs.count {
             let tab = tabs[i]
             let prev = tabs[i - 1]
             
@@ -223,7 +223,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
     }
     
     func indexOfTab(tab: WDTabBarButton) -> Int? {
-        for var i = 0; i < tabs.count; ++i {
+        for i in 0 ..< tabs.count {
             if tabs[i] == tab {
                 return i
             }

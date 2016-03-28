@@ -120,7 +120,8 @@ class ZoomView: NSView
         zoomByFactor(0.5)
     }
     
-    func zoomByFactor(var factor: CGFloat, aroundPoint point: CGPoint) {
+    func zoomByFactor(factor: CGFloat, aroundPoint point: CGPoint) {
+        var factor = factor
         if factor != 1.0 {
             var newScale = factor * scale
             

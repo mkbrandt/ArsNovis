@@ -78,7 +78,7 @@ class GraphicInspector: NSView, NSTextFieldDelegate
             field.editable = true
             field.target = self
             field.delegate = self
-            field.action = "fieldChanged:"
+            field.action = #selector(GraphicInspector.fieldChanged(_:))
             lastField?.nextKeyView = field
             lastField = field
             if firstField == nil {
@@ -106,7 +106,7 @@ class GraphicInspector: NSView, NSTextFieldDelegate
     }
     
     func control(control: NSControl, textView: NSTextView, doCommandBySelector commandSelector: Selector) -> Bool {
-        if commandSelector == "insertNewline:" {
+        if commandSelector == #selector(NSResponder.insertNewline(_:)) {
             fieldChanged(control)
             window?.makeFirstResponder(view)
             return true
