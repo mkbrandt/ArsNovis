@@ -182,6 +182,9 @@ class ArsPage: NSObject, NSCoding
                 }
                 let dscale = decoder.decodeDoubleForKey("pageScale")
                 pageScale = dscale == 0 ? 1 : CGFloat(dscale)
+                if let parametricContext = decoder.decodeObjectForKey("parametrics") as? ParametricContext {
+                    self.parametricContext = parametricContext
+                }
                 self.layers = layers
                 self.name = name
         } else {
@@ -192,6 +195,7 @@ class ArsPage: NSObject, NSCoding
     func encodeWithCoder(coder: NSCoder) {
         coder.encodeObject(name, forKey: "name")
         coder.encodeObject(layers, forKey: "layers")
+        coder.encodeObject(parametricContext, forKey: "parametrics")
         coder.encodeDouble(Double(pageScale), forKey: "pageScale")
         if let rect = pageRect {
             coder.encodeRect(rect, forKey: "pageRect")
@@ -270,6 +274,7 @@ class ArsDocument: NSDocument
     @IBOutlet var drawingView: DrawingView? {
         didSet {
             drawingView?.document = self
+            page.parametricContext.delegate = drawingView
             if let windowFrame = savedWindowFrame {
                 drawingView?.window?.setFrame(windowFrame, display:  true)
             }
@@ -348,6 +353,7 @@ class ArsDocument: NSDocument
             didChangeValueForKey("layers")
             didChangeValueForKey("page")
             measurementUnits = page.units
+            page.parametricContext.delegate = drawingView
             drawingView?.massiveChange()
         }
     }
@@ -382,9 +388,7 @@ class ArsDocument: NSDocument
     }
     
     var parametricVariables: [ParametricVariable] {
-        let pc = parametricContext
-        print("Context has \(pc.variables.count) variables")
-        return pc.variables
+        return parametricContext.variables
     }
     
     class func keyPathsForValuesAffectingParametricVariables() -> Set<String> {
@@ -424,6 +428,7 @@ class ArsDocument: NSDocument
     {
         if let state = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? ArsState {
             self.state = state
+            currentPage = 0
         } else {
             throw NSError(domain: NSOSStatusErrorDomain, code: unimpErr, userInfo: nil)
         }

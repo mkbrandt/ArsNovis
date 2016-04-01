@@ -10,21 +10,23 @@ import Cocoa
 
 class LineGraphic: Graphic
 {
-    var vector: CGPoint {
-        didSet {
-            willChangeValueForKey("endPoint")
+    var endPoint: CGPoint {
+        willSet {
+            willChangeValueForKey("vector")
             willChangeValueForKey("length")
             willChangeValueForKey("angle")
+        }
+        didSet {
             cachedPath = nil
-            didChangeValueForKey("endPoint")
+            didChangeValueForKey("vector")
             didChangeValueForKey("length")
             didChangeValueForKey("angle")
         }
     }
     
-    var endPoint: CGPoint {
-        get { return origin + vector }
-        set { vector = newValue - origin; cachedPath = nil }
+    var vector: CGPoint {
+        get { return endPoint - origin }
+        set { endPoint = origin + newValue }
     }
     
     var length: CGFloat {
@@ -44,36 +46,34 @@ class LineGraphic: Graphic
     override var bounds: CGRect { return NSInsetRect(rectContainingPoints([origin, origin + vector]), -lineWidth, -lineWidth) }
     
     required override init(origin: CGPoint) {
-        vector = CGPoint(x: 1, y: 1)
+        endPoint = origin + CGPoint(x: 1, y: 1)
         super.init(origin: origin)
     }
     
     init(origin: CGPoint, vector: CGPoint) {
-        self.vector = vector
+        endPoint = origin + vector
         super.init(origin: origin)
     }
     
     init(origin: CGPoint, endPoint: CGPoint) {
-        vector = endPoint - origin
+        self.endPoint = endPoint
         super.init(origin: origin)
     }
     
     required init?(coder decoder: NSCoder) {
-        vector = decoder.decodePointForKey("vector")
+        endPoint = decoder.decodePointForKey("endPoint")
         super.init(coder: decoder)
     }
     
     override func encodeWithCoder(coder: NSCoder) {
         super.encodeWithCoder(coder)
-        coder.encodePoint(vector, forKey: "vector")
+        coder.encodePoint(endPoint, forKey: "endPoint")
     }
     
     override func setPoint(point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
-            let ep = endPoint
             origin = point
-            endPoint = ep
         case 1:
             endPoint = point
         default:
@@ -250,11 +250,11 @@ class LineGraphic: Graphic
         return "length"
     }
     
-    override func transformerForKey(key: String) -> NSValueTransformer {
+    override func typeForKey(key: String) -> MeasurementType {
         if key == "angle" {
-            return AngleTransformer()
+            return .Angle
         }
-        return super.transformerForKey(key)
+        return super.typeForKey(key)
     }
 }
 

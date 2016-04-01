@@ -30,7 +30,12 @@ import Foundation
             numerator /= 2
             denominator /= 2
         }
-        return NSString(format: "%d/%d", numerator, denominator)
+        return NSString(format: " %d/%d", numerator, denominator)
+    }
+    
+    func roundTo64th(v: Double) -> Double {
+        let sixty4ths = round(v * 64.0)
+        return sixty4ths / 64.0
     }
     
     override func transformedValue(value: AnyObject?) -> AnyObject? {
@@ -39,20 +44,20 @@ import Foundation
             
             switch measurementUnits {
             case .Inches_frac:
-                v /= 100.0
+                v = roundTo64th(v / 100.0)
                 let whole = Int(v)
                 let frac = v - Double(whole)
                 let fracStr = fractionString(frac)
                 return NSString(format: "%d %s\"", whole, fracStr)
             case .Feet_frac:
-                v /= 100.0
+                v = roundTo64th(v / 100.0)
                 let ft = Int(v) / 12
                 let inches = Int(v - Double(ft) * 12.0)
                 let frac = v - Double(ft * 12 + inches)
                 if ft > 0 {
-                    return NSString(format: "%d'%d %@\"", ft, inches, fractionString(frac))
+                    return NSString(format: "%d'%d%@\"", ft, inches, fractionString(frac))
                 } else {
-                    return NSString(format: "%d %@\"", inches, fractionString(frac))
+                    return NSString(format: "%d%@\"", inches, fractionString(frac))
                 }
             case .Inches_dec:
                 v /= 100.0

@@ -11,7 +11,7 @@ import Cocoa
 let HSIZE: CGFloat = 6.0
 let SELECT_RADIUS: CGFloat = 3.0
 
-class DrawingView: ZoomView
+class DrawingView: ZoomView, ParametricContextDelegate
 {
     @IBOutlet var hintField: NSTextField?
     @IBOutlet var inspector: GraphicInspector?      { didSet { inspector?.view = self }}
@@ -58,7 +58,7 @@ class DrawingView: ZoomView
                 return symbol.parametricContext
             }
         }
-        return nil
+        return document.page.parametricContext
     }
     
     override var contentRect: CGRect {
@@ -325,6 +325,10 @@ class DrawingView: ZoomView
         
         drawSnappedCursor()
         //super.drawRect(dirtyRect)
+    }
+    
+    func parametricContextDidUpdate(parametricContext: ParametricContext) {
+        needsDisplay = true
     }
     
     func setDrawingHint(hint: String)
@@ -682,6 +686,13 @@ class DrawingView: ZoomView
     @IBAction func setWallTool(sender: AnyObject?) {
         tool = WallTool()
         menuButton.image = NSImage(named: "WallTool")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setOpeningTool(sender: AnyObject?) {
+        tool = OpeningTool()
+        menuButton.image = NSImage(named: "OpeningTool")
         menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }

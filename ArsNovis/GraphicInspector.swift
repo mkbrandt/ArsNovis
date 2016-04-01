@@ -34,7 +34,16 @@ class GraphicInspector: NSView, NSTextFieldDelegate
         for (key, (field, xfrm, _)) in info {
             if let textfield = sender as? NSTextField {
                 if field == textfield {
-                    if let val = xfrm.reverseTransformedValue(field.stringValue) as? NSNumber {
+                    if let pcontext = view?.parametricContext, let g = selection, let oldValue = g.valueForKey(key) as? NSValue {
+                        let parser = ParametricParser(context: pcontext, string: field.stringValue, defaultValue: oldValue, type: g.typeForKey(key))
+                        if parser.expression.isVariable {
+                            pcontext.assign(g, property: key, expression: parser.expression)
+                        }
+                        let val = parser.value
+                        view?.setNeedsDisplayInRect(g.bounds)
+                        g.setValue(val, forKey: key)
+                        view?.setNeedsDisplayInRect(g.bounds)
+                    } else if let val = xfrm.reverseTransformedValue(field.stringValue) as? NSNumber {
                         if let g = selection {
                             view?.setNeedsDisplayInRect(g.bounds)
                             g.setValue(val, forKey: key)
@@ -107,7 +116,7 @@ class GraphicInspector: NSView, NSTextFieldDelegate
     
     func control(control: NSControl, textView: NSTextView, doCommandBySelector commandSelector: Selector) -> Bool {
         if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-            fieldChanged(control)
+            //fieldChanged(control)
             window?.makeFirstResponder(view)
             return true
         }

@@ -156,9 +156,7 @@ class LinearDimension: Graphic
     override func setPoint(point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
-            let ep = endPoint
             origin = point
-            endPoint = ep
         case 1:
             endPoint = point
         case 2:

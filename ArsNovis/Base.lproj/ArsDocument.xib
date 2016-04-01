@@ -1097,6 +1097,16 @@ Gw
                             <action selector="setTrimFromTool:" target="MQl-G6-Nsf" id="BdK-a9-82j"/>
                         </connections>
                     </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="LNq-TW-EfV">
+                        <rect key="frame" x="94" y="282" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="OpeningTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="sfo-EQ-7Ue">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setOpeningTool:" target="MQl-G6-Nsf" id="DQd-8o-faV"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
             <point key="canvasLocation" x="-932.5" y="-268.5"/>
@@ -1284,13 +1294,13 @@ Gw
                                                 <subviews>
                                                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="JBO-TL-e0m">
                                                         <rect key="frame" x="0.0" y="0.0" width="100" height="17"/>
-                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="6kC-BW-TIw">
+                                                        <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" title="Table View Cell" id="6kC-BW-TIw">
                                                             <font key="font" metaFont="system"/>
                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                         </textFieldCell>
                                                         <connections>
-                                                            <binding destination="zhl-qg-t5c" name="value" keyPath="objectValue.value" id="Pxp-y4-9Go"/>
+                                                            <binding destination="zhl-qg-t5c" name="value" keyPath="objectValue.stringValue" id="dST-Ax-FAb"/>
                                                         </connections>
                                                     </textField>
                                                 </subviews>
@@ -1340,6 +1350,7 @@ Gw
         <image name="LinearDim" width="48" height="48"/>
         <image name="NSAddTemplate" width="11" height="11"/>
         <image name="NSRemoveTemplate" width="11" height="11"/>
+        <image name="OpeningTool" width="48" height="48"/>
         <image name="Parametrics" width="18" height="24"/>
         <image name="RectTool" width="48" height="48"/>
         <image name="SelectTool" width="48" height="48"/>

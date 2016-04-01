@@ -122,12 +122,12 @@ class ArcGraphic: Graphic
         return "radius"
     }
     
-    override func transformerForKey(key: String) -> NSValueTransformer {
+    override func typeForKey(key: String) -> MeasurementType {
         switch key {
         case "startAngle", "endAngle":
-            return AngleTransformer()
+            return .Angle
         default:
-            return DistanceTransformer()
+            return .Distance
         }
     }
     

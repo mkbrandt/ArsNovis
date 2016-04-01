@@ -46,6 +46,13 @@ struct SnapResult
     }
 }
 
+private var IDCount = 0
+
+func nextIdentifier() -> Int {
+    IDCount += 1
+    return IDCount
+}
+
 /// Base class for all graphic objects
 
 class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
@@ -55,6 +62,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     var cachedPath: NSBezierPath?
     var showHandles = false             { didSet { cachedPath = nil }}
     var isActive = true
+    var identifier: Int
     var ref: [Graphic] = []
     
     var isConstruction: Bool { return false }       // return true when this graphic is a temporary construction line
@@ -113,6 +121,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     init(origin: CGPoint)
     {
         self.origin = origin
+        identifier = nextIdentifier()
         super.init()
     }
     
@@ -122,6 +131,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         fillColor = decoder.decodeObjectForKey("fillColor") as? NSColor
         lineWidth = CGFloat(decoder.decodeDoubleForKey("lineWidth"))
         origin = decoder.decodePointForKey("origin")
+        identifier = nextIdentifier()
         super.init()
     }
     
@@ -171,9 +181,17 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return "x"
     }
     
-    func transformerForKey(key: String) -> NSValueTransformer
-    {
-        return DistanceTransformer()
+    func typeForKey(key: String) -> MeasurementType {
+        return .Distance
+    }
+    
+    func transformerForKey(key: String) -> NSValueTransformer {
+        switch typeForKey(key) {
+        case .Angle:
+            return AngleTransformer()
+        case .Distance:
+            return DistanceTransformer()
+        }
     }
     
     // Graphic
@@ -209,7 +227,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     {
         cachedPath = NSBezierPath()
         cachedPath!.lineWidth = lineWidth
-        cachedPath!.appendBezierPathWithOvalInRect(CGRect(x: origin.x - 2, y: origin.y - 2, width: 4, height: 4))
+        cachedPath!.appendBezierPathWithOvalInRect(CGRect(x: origin.x - SELECT_RADIUS / 2, y: origin.y - SELECT_RADIUS, width: SELECT_RADIUS, height: SELECT_RADIUS))
     }
     
     /// Utility function to draw a filled point as a 4 pixel rect.
