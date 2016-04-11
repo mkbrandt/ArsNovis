@@ -340,7 +340,7 @@ class ArsDocument: NSDocument
     }
     
     var pages: [ArsPage]        { return workspace.pages }
-    var page: ArsPage           { return pages[currentPage] }
+    var page: ArsPage           { return pages[currentPage < pages.count ? currentPage : 0] }
     var layers: [ArsLayer]      { return page.layers }
     var layer: ArsLayer         { return layers[currentLayer] }
     
@@ -404,7 +404,7 @@ class ArsDocument: NSDocument
     override func windowControllerDidLoadNib(aController: NSWindowController)
     {
         super.windowControllerDidLoadNib(aController)
-        aController.window?.titleVisibility = NSWindowTitleVisibility.Hidden
+        //aController.window?.titleVisibility = NSWindowTitleVisibility.Hidden
     }
 
     override class func autosavesInPlace() -> Bool
@@ -528,9 +528,15 @@ class ArsDocument: NSDocument
             if let window = drawingView?.window {
                 alert.beginSheetModalForWindow(window) { (response) -> Void in
                     if response == NSAlertSecondButtonReturn {
-                        self.willChangeValueForKey("pages")
-                        self.workspace.pages.removeAtIndex(self.currentPage)
+                        let index = self.currentPage
+                        self.willChangeValueForKey("page")
+                        self.willChangeValueForKey("layer")
+                        self.workspace.pages.append(self.workspace.pages.removeAtIndex(index))
+                        self.didChangeValueForKey("page")
+                        self.didChangeValueForKey("layer")
                         self.currentPage = 0
+                        self.willChangeValueForKey("pages")
+                        self.workspace.pages.removeAtIndex(self.pages.count - 1)
                         self.didChangeValueForKey("pages")
                     }
                 }

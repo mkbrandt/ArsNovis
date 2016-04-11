@@ -145,6 +145,11 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         coder.encodePoint(origin, forKey: "origin")
     }
     
+    /// Override unlink to do anything necessary to remove links to other graphics when deleting this one
+    func unlink() {
+        ref = []        // delete all references
+    }
+    
     // Pasteboard
     
     required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
@@ -217,6 +222,51 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     {
         let vector = point - origin
         moveOriginBy(vector)
+    }
+    
+    func centerOfPoints() -> CGPoint {
+        var center = origin
+        for i in 1 ..< points.count {
+            center = center + points[i]
+        }
+        return center / CGFloat(points.count)
+    }
+    
+    func rotateAroundPoint(center: CGPoint, angle: CGFloat) {
+        var newPoints: [CGPoint] = []
+        for i in 0 ..< points.count {
+            var offset = points[i] - center
+            offset.angle += angle
+            newPoints.append(center + offset)
+        }
+        
+        for i in 0 ..< points.count {
+            setPoint(newPoints[i], atIndex: i)
+        }
+    }
+    
+    func flipHorizontalAroundPoint(center: CGPoint) {
+        var newPoints: [CGPoint] = []
+        for i in 0 ..< points.count {
+            let offset = points[i].x - center.x
+            newPoints.append(CGPoint(x: center.x - offset, y: points[i].y))
+        }
+        
+        for i in 0 ..< points.count {
+            setPoint(newPoints[i], atIndex: i)
+        }
+    }
+    
+    func flipVerticalAroundPoint(center: CGPoint) {
+        var newPoints: [CGPoint] = []
+        for i in 0 ..< points.count {
+            let offset = points[i].y - center.y
+            newPoints.append(CGPoint(x: points[i].x, y: center.y - offset))
+        }
+        
+        for i in 0 ..< points.count {
+            setPoint(newPoints[i], atIndex: i)
+        }
     }
     
     /// Recreate the cached path.

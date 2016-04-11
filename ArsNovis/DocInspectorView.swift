@@ -16,6 +16,7 @@ class InspectorButton: NSButton
 class DocInspectorView: NSView
 {
     @IBOutlet var widthConstraint: NSLayoutConstraint!
+    @IBOutlet var inspectorView: NSView!
     
     var inspectorConstraints: [NSLayoutConstraint] = []
     
@@ -29,11 +30,11 @@ class DocInspectorView: NSView
         if let inspector = sender.inspector {
             inspectorConstraints = []
             inspector.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(inspector)
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Left, relatedBy: .Equal, toItem: self, attribute: .Left, multiplier: 1, constant: 0))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Right, relatedBy: .Equal, toItem: self, attribute: .Right, multiplier: 1, constant: 0))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Top, relatedBy: .Equal, toItem: self, attribute: .Top, multiplier: 1, constant: 40))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Bottom, relatedBy: .Equal, toItem: self, attribute: .Bottom, multiplier: 1, constant: 40))
+            inspectorView.addSubview(inspector)
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Left, relatedBy: .Equal, toItem: inspectorView, attribute: .Left, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Right, relatedBy: .Equal, toItem: inspectorView, attribute: .Right, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Top, relatedBy: .Equal, toItem: inspectorView, attribute: .Top, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Bottom, relatedBy: .Equal, toItem: inspectorView, attribute: .Bottom, multiplier: 1, constant: 0))
             addConstraints(inspectorConstraints)
             currentInspector = inspector
         }

@@ -67,6 +67,31 @@ class GroupGraphic: RectGraphic
         }
     }
     
+    override func unlink() {
+        super.unlink()
+        for g in contents {
+            g.unlink()
+        }
+    }
+    
+    override func rotateAroundPoint(center: CGPoint, angle: CGFloat) {
+        for g in contents {
+            g.rotateAroundPoint(center, angle: angle)
+        }
+    }
+    
+    override func flipVerticalAroundPoint(center: CGPoint) {
+        for g in contents {
+            g.flipVerticalAroundPoint(center)
+        }
+    }
+    
+    override func flipHorizontalAroundPoint(center: CGPoint) {
+        for g in contents {
+            g.flipHorizontalAroundPoint(center)
+        }
+    }
+    
     override func drawInView(view: DrawingView) {
         for g in contents {
             g.drawInView(view)

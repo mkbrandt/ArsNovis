@@ -69,6 +69,10 @@ class RectGraphic: Graphic
         coder.encodeSize(size, forKey: "size")
     }
     
+    override func moveOriginBy(vector: CGPoint) {
+        origin = origin + vector
+    }
+        
     override func setPoint(point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:

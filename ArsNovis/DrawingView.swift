@@ -18,13 +18,13 @@ class DrawingView: ZoomView, ParametricContextDelegate
     @IBOutlet var menuWindow: NSWindow!
     @IBOutlet var menuButton: NSButton!
     
-    var document: ArsDocument!
+    var document: ArsDocument?
     
     var context: CGContext!
 
     override var pageRect: CGRect? {
-        if let rect = document.page.pageRect {
-            let size = rect.size * (100 / document.page.pageScale)
+        if let rect = document?.page.pageRect {
+            let size = rect.size * (100 / (document?.page.pageScale ?? 1.0))
             return CGRect(origin: rect.origin, size: size)
         } else {
             return nil
@@ -32,8 +32,8 @@ class DrawingView: ZoomView, ParametricContextDelegate
     }
     
     var displayList: [Graphic] {
-        get { return document.displayList }
-        set { document.displayList = newValue }
+        get { return document?.displayList ?? [] }
+        set { document?.displayList = newValue }
     }
     
     var selection: [Graphic] = [] {
@@ -58,7 +58,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
                 return symbol.parametricContext
             }
         }
-        return document.page.parametricContext
+        return document?.page.parametricContext
     }
     
     override var contentRect: CGRect {
@@ -82,12 +82,15 @@ class DrawingView: ZoomView, ParametricContextDelegate
     var snapConstructions: [Graphic] = []
     
     var tool: GraphicTool = SelectTool() {
-        didSet { selection = [] }
+        didSet {
+            tool.selectTool(self)
+            selection = []
+        }
     }
     
     var gridSnap: Bool      {
-        get { return document.layer.snapToGrid }
-        set { document.layer.snapToGrid = newValue }
+        get { return document?.layer.snapToGrid ?? false }
+        set { document?.layer.snapToGrid = newValue }
     }
     
     var defaultSnapAngles = [
@@ -123,6 +126,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         window?.acceptsMouseMovedEvents = true
         tool.selectTool(self)
         updateTrackingAreas()
+        registerForDraggedTypes([ELGraphicUTI])
     }
     
     override func becomeFirstResponder() -> Bool
@@ -162,7 +166,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     }
     
     func scaleFloatToDrawing(f: CGFloat) -> CGFloat {
-        return f / document.page.pageScale
+        return f / (document?.page.pageScale ?? 1.0)
     }
     
 // MARK: Drawing
@@ -174,8 +178,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     }
     
     func drawBorder(dirtyRect: CGRect) {
-        if let pageRect = pageRect {
-            let page = document.page
+        if let pageRect = pageRect, let page = document?.page {
             let borderWidth = page.borderWidth / page.pageScale
             var outsideBorderRect = pageRect.insetBy(dx: (page.borderInset + page.leftBorderOffset / 2) / page.pageScale, dy: page.borderInset / page.pageScale)
             outsideBorderRect.origin.x += page.leftBorderOffset / 2 / page.pageScale
@@ -232,7 +235,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         
     func drawGridInRect(dirtyRect: CGRect, layer: ArsLayer)
     {
-        if NSGraphicsContext.currentContextDrawingToScreen() {
+        if let document = document where NSGraphicsContext.currentContextDrawingToScreen() {
             let gridSize = layer.minorGrid / document.page.pageScale
             let divsPerMajor = round(layer.majorGrid / document.layer.minorGrid)
             let xs = floor((dirtyRect.origin.x - gridSize) / gridSize) * gridSize
@@ -280,18 +283,20 @@ class DrawingView: ZoomView, ParametricContextDelegate
         
         NSEraseRect(dirtyRect)
         drawBorder(dirtyRect)
-        if document.layer.gridMode != .Never {
-            drawGridInRect(dirtyRect, layer: document.layer)
-        }
-        
-        for layerIndex in 0 ..< document.layers.count {
-            if layerIndex != document.currentLayer {
-                let layer = document.layers[layerIndex]
-                
-                if layer.gridModeAlways {
-                    drawGridInRect(dirtyRect, layer: layer)
+        if let document = document {
+            if document.layer.gridMode != .Never {
+                drawGridInRect(dirtyRect, layer: document.layer)
+            }
+            
+            for layerIndex in 0 ..< document.layers.count {
+                if layerIndex != document.currentLayer {
+                    let layer = document.layers[layerIndex]
+                    
+                    if layer.gridModeAlways {
+                        drawGridInRect(dirtyRect, layer: layer)
+                    }
+                    drawArsLayer(document.layers[layerIndex])
                 }
-                drawArsLayer(document.layers[layerIndex])
             }
         }
         
@@ -435,7 +440,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     func snapToGrid(point: CGPoint) -> SnapResult?
     {
         var point = point
-        let grid = document.layer.minorGrid
+        let grid = document?.layer.minorGrid ?? 0.1
         
         if gridSnap {
             point.x = round(point.x / grid) * grid
@@ -612,6 +617,44 @@ class DrawingView: ZoomView, ParametricContextDelegate
     {
         //tool.cursor().pop()
     }
+    
+// MARK: Drag and Drop
+    
+    override func draggingEntered(sender: NSDraggingInfo) -> NSDragOperation {
+        sender.enumerateDraggingItemsWithOptions(.ClearNonenumeratedImages, forView: self, classes: [Graphic.self], searchOptions: [:]) { (item, n, stop) in
+            if let graphic = item.item as? Graphic {
+                let fr = item.draggingFrame
+                let image = NSImage(size: CGSize(width: 1, height: 1))
+                item.setDraggingFrame(fr, contents: image)
+                self.construction = graphic
+                let windowLocation = sender.draggingLocation()
+                let location = self.convertPoint(windowLocation, fromView: nil)
+                self.construction?.moveOriginTo(location)
+                self.needsDisplay = true
+            }
+        }
+        return NSDragOperation.Copy
+    }
+    
+    override func draggingUpdated(sender: NSDraggingInfo) -> NSDragOperation {
+        let windowLocation = sender.draggingLocation()
+        let location = self.convertPoint(windowLocation, fromView: nil)
+        construction?.moveOriginTo(location)
+        needsDisplay = true
+       return NSDragOperation.Copy
+    }
+    
+    override func draggingExited(sender: NSDraggingInfo?) {
+        self.construction = nil
+        needsDisplay = true
+    }
+    
+    override func performDragOperation(sender: NSDraggingInfo) -> Bool {
+        if construction != nil {
+            addConstruction()
+        }
+        return true
+    }
 
 // MARK: Keyboard Handling
     
@@ -774,6 +817,20 @@ class DrawingView: ZoomView, ParametricContextDelegate
         window?.invalidateCursorRectsForView(self)
     }
     
+    @IBAction func setHorizontalDimensionTool(sender: AnyObject?) {
+        tool = HorizontalDimensionTool()
+        menuButton.image = NSImage(named: "HorizontalDim")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setVerticalDimensionTool(sender: AnyObject?) {
+        tool = VerticalDimensionTool()
+        menuButton.image = NSImage(named: "VerticalDim")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
     @IBAction func setSelectTool(sender: AnyObject?) {
         tool = SelectTool()
         menuButton.image = NSImage(named: "SelectTool")
@@ -830,6 +887,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         for g in selection {
             if let g = g as? GroupGraphic {
                 deleteGraphic(g)
+                g.unlink()
                 addGraphics(g.contents)
                 newSelection.appendContentsOf(g.contents)
             } else {
@@ -837,6 +895,33 @@ class DrawingView: ZoomView, ParametricContextDelegate
             }
         }
         selection = newSelection
+    }
+    
+    @IBAction func rotateSelected(sender: AnyObject?) {
+        if selection.count > 0 {
+            let g = GroupGraphic(contents: selection)
+            let center = g.centerOfPoints()
+            g.rotateAroundPoint(center, angle: PI / 2)
+        }
+        needsDisplay = true
+    }
+    
+    @IBAction func flipSelectedHorizontal(sender: AnyObject?) {
+        if selection.count > 0 {
+            let g = GroupGraphic(contents: selection)
+            let center = g.centerOfPoints()
+            g.flipHorizontalAroundPoint(center)
+        }
+        needsDisplay = true
+    }
+    
+    @IBAction func flipSelectedVertical(sender: AnyObject?) {
+        if selection.count > 0 {
+            let g = GroupGraphic(contents: selection)
+            let center = g.centerOfPoints()
+            g.flipVerticalAroundPoint(center)
+        }
+        needsDisplay = true
     }
     
 // MARK: Display List Maintenance
@@ -862,6 +947,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     {
         displayList = displayList.filter { !graphics.contains($0) }
         undoManager?.prepareWithInvocationTarget(self).addGraphics(graphics)
+        graphics.forEach { $0.unlink() }
         needsDisplay = true
     }
     
@@ -869,6 +955,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     {
         displayList = displayList.filter { $0 != graphic }
         undoManager?.prepareWithInvocationTarget(self).addGraphic(graphic)
+        graphic.unlink()
         needsDisplay = true
     }
     
@@ -890,10 +977,14 @@ class DrawingView: ZoomView, ParametricContextDelegate
 // MARK: Printing Support
     
     var perPageSize: CGSize {
-        var size = document.printInfo.paperSize
-        size = size * (1.0 / 72.0)          // convert to inches
-        size = size * (100.0 / document.page.pageScale)
-        return size
+        if let document = document {
+            var size = document.printInfo.paperSize
+            size = size * (1.0 / 72.0)          // convert to inches
+            size = size * (100.0 / document.page.pageScale)
+            return size
+        } else {
+            return CGSize(width: 100, height: 100)
+        }
     }
     
     func getPages() -> (Int, Int) {

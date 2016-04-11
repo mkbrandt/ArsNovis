@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9532" systemVersion="15D21" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9532"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="10116"/>
+        <capability name="box content view" minToolsVersion="7.0"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -26,7 +27,11 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="VOq-y0-SEH"/>
-                            <menuItem title="Preferences…" keyEquivalent="," id="BOF-NM-1cW"/>
+                            <menuItem title="Preferences…" keyEquivalent="," id="BOF-NM-1cW">
+                                <connections>
+                                    <action selector="orderFront:" target="II9-Lg-cvO" id="da1-vp-SKS"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="wFC-TO-SCJ"/>
                             <menuItem title="Services" id="NMo-om-nkz">
                                 <modifierMask key="keyEquivalentModifierMask"/>
@@ -302,5 +307,213 @@
                 </menuItem>
             </items>
         </menu>
+        <window title="Preferences" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="II9-Lg-cvO" userLabel="Preferences" customClass="AppPreferences" customModule="ArsNovis" customModuleProvider="target">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" utility="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="272" y="172" width="621" height="378"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+            <view key="contentView" id="evf-KC-rJI">
+                <rect key="frame" x="0.0" y="0.0" width="621" height="378"/>
+                <autoresizingMask key="autoresizingMask"/>
+            </view>
+            <toolbar key="toolbar" implicitIdentifier="606DE0D4-CA84-4A14-8800-03868760D7F5" autosavesConfiguration="NO" displayMode="iconAndLabel" sizeMode="regular" id="JWW-rf-24L">
+                <allowedToolbarItems>
+                    <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="7Xa-Xr-yKH"/>
+                    <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="Deg-vK-els"/>
+                    <toolbarItem implicitItemIdentifier="30AA0D34-3819-4517-BA34-F8D1C01DFC44" label="General" paletteLabel="General" tag="1" image="NSPreferencesGeneral" autovalidates="NO" id="XZd-bI-wql" customClass="ArsToolbarItem" customModule="ArsNovis" customModuleProvider="target">
+                        <connections>
+                            <action selector="chooseContents:" target="II9-Lg-cvO" id="dik-OF-LlU"/>
+                            <outlet property="toolView" destination="xb6-aM-aQp" id="O88-EU-Ev0"/>
+                        </connections>
+                    </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="41EDBFBA-16E9-4651-A9AB-FBE543360A65" label="Units" paletteLabel="Units" tag="-1" image="NSAdvanced" autovalidates="NO" id="fx5-Iq-On0" customClass="ArsToolbarItem" customModule="ArsNovis" customModuleProvider="target">
+                        <connections>
+                            <action selector="chooseContents:" target="II9-Lg-cvO" id="e0c-5J-4U9"/>
+                            <outlet property="toolView" destination="xAQ-bN-3Rf" id="nFY-rd-R7B"/>
+                        </connections>
+                    </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="22A27D12-282E-4744-883C-AD972C3538C1" label="Dimensions" paletteLabel="Dimensions" tag="-1" image="HorizontalDim" autovalidates="NO" id="j28-HH-m1q" customClass="ArsToolbarItem" customModule="ArsNovis" customModuleProvider="target">
+                        <connections>
+                            <action selector="chooseContents:" target="II9-Lg-cvO" id="Odv-4u-hla"/>
+                            <outlet property="toolView" destination="XZz-95-p9H" id="MWg-GQ-Ro0"/>
+                        </connections>
+                    </toolbarItem>
+                </allowedToolbarItems>
+                <defaultToolbarItems>
+                    <toolbarItem reference="XZd-bI-wql"/>
+                    <toolbarItem reference="fx5-Iq-On0"/>
+                    <toolbarItem reference="j28-HH-m1q"/>
+                </defaultToolbarItems>
+            </toolbar>
+            <connections>
+                <outlet property="defaultToolbarItem" destination="XZd-bI-wql" id="1L4-Nj-kYZ"/>
+            </connections>
+            <point key="canvasLocation" x="1214.5" y="551"/>
+        </window>
+        <customView id="xb6-aM-aQp" customClass="NSBox">
+            <rect key="frame" x="0.0" y="0.0" width="512" height="256"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="uPn-8T-HhF">
+                    <rect key="frame" x="190" y="142" width="85" height="17"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="General tools" id="rUD-r0-ZNz">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+            </subviews>
+            <point key="canvasLocation" x="1153.5" y="953.5"/>
+        </customView>
+        <customView id="xAQ-bN-3Rf">
+            <rect key="frame" x="0.0" y="0.0" width="512" height="200"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <box autoresizesSubviews="NO" fixedFrame="YES" title="Default Units" borderType="line" translatesAutoresizingMaskIntoConstraints="NO" id="ugv-w1-mH2">
+                    <rect key="frame" x="17" y="16" width="206" height="164"/>
+                    <view key="contentView" id="K9v-0b-rsZ">
+                        <rect key="frame" x="1" y="1" width="204" height="148"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PVb-Zk-wko">
+                                <rect key="frame" x="19" y="34" width="88" height="18"/>
+                                <buttonCell key="cell" type="radio" title="millimeters" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="TKg-wv-5Hn">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mzI-bF-9CW">
+                                <rect key="frame" x="19" y="100" width="123" height="18"/>
+                                <buttonCell key="cell" type="radio" title="Inches fractional" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="ff3-bY-K9y">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="syY-Qf-WZc">
+                                <rect key="frame" x="19" y="12" width="64" height="18"/>
+                                <buttonCell key="cell" type="radio" title="meters" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="s9y-rx-SyK">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Yks-wW-Af7">
+                                <rect key="frame" x="19" y="122" width="113" height="18"/>
+                                <buttonCell key="cell" type="radio" title="Inches decimal" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="KFS-V2-KpA">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7ZL-AU-AIJ">
+                                <rect key="frame" x="19" y="78" width="146" height="18"/>
+                                <buttonCell key="cell" type="radio" title="Feet-Inches decimal" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="Tsp-bv-1pw">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GdS-8w-D2t">
+                                <rect key="frame" x="19" y="56" width="156" height="18"/>
+                                <buttonCell key="cell" type="radio" title="Feet-Inches fractional" bezelStyle="regularSquare" imagePosition="left" alignment="left" inset="2" id="SqG-8e-YgL">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                    </view>
+                    <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
+                    <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                </box>
+            </subviews>
+            <point key="canvasLocation" x="1761" y="925"/>
+        </customView>
+        <customView id="XZz-95-p9H" customClass="DimensionPreferenceView" customModule="ArsNovis" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="512" height="151"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sJp-ME-R9h">
+                    <rect key="frame" x="25" y="112" width="83" height="17"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Arrow Width:" id="Www-Gh-14S">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Tvc-J5-Csx">
+                    <rect key="frame" x="18" y="87" width="90" height="17"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Arrow Length:" id="xp5-5s-dbj">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ljR-IH-a0N">
+                    <rect key="frame" x="14" y="51" width="98" height="32"/>
+                    <buttonCell key="cell" type="push" title="Font" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2e1-ha-wUq">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="showFontPanel:" target="XZz-95-p9H" id="hjg-Zn-TYa"/>
+                    </connections>
+                </button>
+                <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Iyx-9c-fH9">
+                    <rect key="frame" x="114" y="109" width="74" height="22"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="TUb-X3-mIx">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <action selector="widthChange:" target="XZz-95-p9H" id="0T2-9P-cig"/>
+                    </connections>
+                </textField>
+                <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4jI-np-xhr">
+                    <rect key="frame" x="114" y="84" width="74" height="22"/>
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="aQE-96-2ur">
+                        <font key="font" metaFont="system"/>
+                        <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                    <connections>
+                        <action selector="lengthChange:" target="XZz-95-p9H" id="TBm-sB-Eko"/>
+                    </connections>
+                </textField>
+                <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PpP-Su-k2g">
+                    <rect key="frame" x="187" y="106" width="19" height="27"/>
+                    <stepperCell key="cell" continuous="YES" alignment="left" minValue="4" maxValue="24" doubleValue="6" id="4J3-fK-nid"/>
+                    <connections>
+                        <action selector="widthChange:" target="XZz-95-p9H" id="D8R-g0-mtE"/>
+                    </connections>
+                </stepper>
+                <box autoresizesSubviews="NO" fixedFrame="YES" title="Box" boxType="oldStyle" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="L9i-XZ-g0I">
+                    <rect key="frame" x="228" y="21" width="264" height="110"/>
+                    <view key="contentView" id="nGf-ru-WDI" customClass="PreviewDrawing" customModule="ArsNovis" customModuleProvider="target">
+                        <rect key="frame" x="2" y="2" width="260" height="106"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                    </view>
+                    <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
+                    <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                </box>
+                <stepper horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q0t-cu-okM">
+                    <rect key="frame" x="187" y="81" width="19" height="27"/>
+                    <stepperCell key="cell" continuous="YES" alignment="left" minValue="4" maxValue="100" doubleValue="12" id="QFu-cK-xL6"/>
+                    <connections>
+                        <action selector="lengthChange:" target="XZz-95-p9H" id="5Gr-8Q-P3l"/>
+                    </connections>
+                </stepper>
+            </subviews>
+            <connections>
+                <outlet property="arrowLengthField" destination="4jI-np-xhr" id="2Qa-SY-ha8"/>
+                <outlet property="arrowWidthField" destination="Iyx-9c-fH9" id="vK0-Sd-LSc"/>
+                <outlet property="lengthStepper" destination="Q0t-cu-okM" id="GRj-BP-qDg"/>
+                <outlet property="preview" destination="nGf-ru-WDI" id="96x-cb-gVh"/>
+                <outlet property="widthStepper" destination="PpP-Su-k2g" id="JTM-Aq-SmF"/>
+            </connections>
+            <point key="canvasLocation" x="1153" y="1235.5"/>
+        </customView>
     </objects>
+    <resources>
+        <image name="HorizontalDim" width="48" height="48"/>
+        <image name="NSAdvanced" width="32" height="32"/>
+        <image name="NSPreferencesGeneral" width="32" height="32"/>
+    </resources>
 </document>

@@ -368,6 +368,11 @@ private func /(a: NSValue, b: NSValue) -> NSValue {
     optional func parametricContextDidUpdate(parametricContext: ParametricContext)
 }
 
+struct ObservationInfo {
+    var target: Graphic
+    var property: String
+}
+
 class ParametricContext: NSObject, NSCoding
 {
     var variablesByName: [String: ParametricVariable] = [:]
@@ -376,6 +381,9 @@ class ParametricContext: NSObject, NSCoding
     var delegate: ParametricContextDelegate?
     var exceptions: [ParametricNode] = []
     var prefix: String = ""
+    
+    var observing: [ObservationInfo] = []
+    var suspendCount = 0
     
     override init() {
         super.init()
@@ -394,10 +402,11 @@ class ParametricContext: NSObject, NSCoding
             for p in parametrics {
                 if let left = p.left as? ParametricValue {
                     let target = left.target
-                    target.addObserver(self, forKeyPath: left.name, options: NSKeyValueObservingOptions.New, context: nil)
+                    startObserving(target, property: left.name)
                 }
             }
         }
+        print("New parametric context \(self)")
         showVariables()
         showParametrics()
     }
@@ -431,6 +440,42 @@ class ParametricContext: NSObject, NSCoding
         variables.append(pv)
         variablesByName[key] = pv
         return pv
+    }
+    
+    func startObserving(target: Graphic, property: String) {
+        print("\(self) registers for \(property) of G\(target.identifier)")
+        observing.append(ObservationInfo(target: target, property: property))
+        target.addObserver(self, forKeyPath: property, options: NSKeyValueObservingOptions.New, context: nil)
+    }
+    
+    func suspendObservation() {
+        suspendCount += 1
+        if suspendCount > 1 {
+            return
+        }
+        //print("\(self) suspends observation")
+        for info in observing {
+            //print("  remove observer G\(info.target.identifier).\(info.property)")
+            info.target.removeObserver(self, forKeyPath: info.property)
+        }
+    }
+    
+    func resumeObservation() {
+        suspendCount -= 1
+        if suspendCount > 0 {
+            return
+        }
+        //print("\(self) resumes observation")
+        for info in observing {
+            //print("  add observer G\(info.target.identifier).\(info.property)")
+            info.target.addObserver(self, forKeyPath: info.property, options: NSKeyValueObservingOptions.New, context: nil)
+        }
+        
+        for p in parametrics {
+            if p.right.isVariable {             // reverse resolve to get new variables
+                p.right.value = p.left.value
+            }
+        }
     }
     
     /// resolve -- propagate any changes to variable values to the rest of the context
@@ -468,7 +513,7 @@ class ParametricContext: NSObject, NSCoding
     func assign(target: Graphic, property: String, expression: ParametricNode) {
         let param = ParametricValue(target: target, name: property, context: self)
         let assignment = ParametricBinding(left: param, right: expression, context: self)
-        target.addObserver(self, forKeyPath: property, options: NSKeyValueObservingOptions.New, context: nil)
+        startObserving(target, property: property)
         parametrics = parametrics.filter {
             if let p = $0.left as? ParametricValue where p.target == target && p.name == property {
                 return false
@@ -484,7 +529,7 @@ class ParametricContext: NSObject, NSCoding
             if isException(target, key: keyPath) {
                 return
             }
-            //print("\(prefix)start observing \(keyPath) for G\(target.identifier), change = \(change![NSKeyValueChangeNewKey])")
+            //print("\(prefix)start observing \(keyPath) for G\(target.identifier), context = \(self), change = \(change![NSKeyValueChangeNewKey])")
             let oldPrefix = prefix
             prefix += "  "
             let oldExceptions = exceptions
@@ -498,7 +543,7 @@ class ParametricContext: NSObject, NSCoding
             }
             exceptions = oldExceptions
             prefix = oldPrefix
-            //print("\(prefix)end observing \(keyPath) for G\(target.identifier)")
+            //print("\(prefix)end observing \(keyPath) for G\(target.identifier), context = \(self)")
         }
     }
     
@@ -693,6 +738,21 @@ class ParametricParser
         lastToken = try getToken()
     }
     
+    private var defaultUnitMultiplier: CGFloat {
+        switch measurementUnits {
+        case .Feet_dec, .Inches_dec, .Feet_frac, .Inches_frac:      // these default to inches
+            return 100.0
+        case .Millimeters:
+            return 100 / 25.4                    // default to millimeters
+        case .Meters:
+            return 1000 * 100 / 25.4             // default to meters
+        }
+    }
+    
+    private var defaultUnitMultiplierNode: ParametricConstant {
+        return ParametricConstant(value: defaultUnitMultiplier, context: context)
+    }
+    
     private func unary() throws -> ParametricNode {
         switch lastToken {
         case .Operator("-"):
@@ -748,17 +808,27 @@ class ParametricParser
                 if type == .Angle {
                     p.value = n * PI / 180                       // convert from degrees
                 } else {
-                    switch measurementUnits {
-                    case .Feet_dec, .Inches_dec, .Feet_frac, .Inches_frac:      // these default to inches
-                        p.value = n * 100.0
-                    case .Millimeters:
-                        p.value = n * 100 / 25.4                    // default to millimeters
-                    case .Meters:
-                        p.value = n * 1000 * 100 / 25.4             // default to meters
-                    }
+                    p.value = n * defaultUnitMultiplier
                 }
             }
             return p
+        case .Operator("{"):
+            try nextToken()
+            let x = try anyOperation()
+            if case .Operator(",") = lastToken {
+                try nextToken()
+            } else {
+                throw ParseError.BadExpression
+            }
+            let y = try anyOperation()
+            if case .Operator("}") = lastToken {
+                try nextToken()
+                if let xv = x.value as? CGFloat, yv = y.value as? CGFloat {
+                    let pvalue = CGPoint(x: xv, y: yv)
+                    return ParametricConstant(value: NSValue(point: pvalue), context: context)
+                }
+            }
+            throw ParseError.BadExpression
         default:
             throw ParseError.BadExpression
         }
@@ -770,11 +840,13 @@ class ParametricParser
         case .Operator("*"):
             try nextToken()
             let q = try timesOperation()
-            return ParametricOperation(op: "*", left: p, right: q, context: context)
+            let qq = ParametricOperation(op: "/", left: q, right: defaultUnitMultiplierNode, context: context)
+            return ParametricOperation(op: "*", left: p, right: qq, context: context)
         case .Operator("/"):
             try nextToken()
             let q = try timesOperation()
-            return ParametricOperation(op: "/", left: p, right: q, context: context)
+            let qq = ParametricOperation(op: "/", left: q, right: defaultUnitMultiplierNode, context: context)
+            return ParametricOperation(op: "/", left: p, right: qq, context: context)
         default:
             return p
         }
@@ -794,5 +866,9 @@ class ParametricParser
         default:
             return p
         }
+    }
+    
+    private func anyOperation() throws -> ParametricNode {
+        return try addOperation()
     }
 }

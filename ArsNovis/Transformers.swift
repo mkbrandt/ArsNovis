@@ -54,8 +54,10 @@ import Foundation
                 let ft = Int(v) / 12
                 let inches = Int(v - Double(ft) * 12.0)
                 let frac = v - Double(ft * 12 + inches)
-                if ft > 0 {
+                if ft > 0 && (inches > 0 || frac > 0) {
                     return NSString(format: "%d'%d%@\"", ft, inches, fractionString(frac))
+                } else if ft > 0 {
+                    return NSString(format: "%d'", ft)
                 } else {
                     return NSString(format: "%d%@\"", inches, fractionString(frac))
                 }
@@ -66,8 +68,10 @@ import Foundation
                 v /= 100.0
                 let ft = Int(v) / 12
                 let inches = v - Double(ft) * 12.0
-                if ft > 0 {
+                if ft > 0 && inches > 0 {
                     return NSString(format: "%d'%0.6g\"", ft, inches)
+                } else if ft > 0 {
+                    return NSString(format: "%d'", ft)
                 } else {
                     return NSString(format: "%0.6g\"", inches)
                 }
@@ -77,6 +81,9 @@ import Foundation
             default:
                 return "\(v)pt"
             }
+        } else if let value = value as? NSValue where String.fromCString(value.objCType)!.hasPrefix("{CGPoint=") {
+            let p = value.pointValue
+            return NSString(format: "{%0.6g,%0.6g}", p.x, p.y)
         } else {
             return "-0"
         }

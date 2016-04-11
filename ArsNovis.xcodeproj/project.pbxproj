@@ -20,7 +20,8 @@
 		7A3943471A70343500E1FD94 /* LineGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3943461A70343500E1FD94 /* LineGraphic.swift */; };
 		7A3943491A70359B00E1FD94 /* GraphicMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3943481A70359B00E1FD94 /* GraphicMath.swift */; };
 		7A5BA25B1C87A97C00204FA3 /* DocInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5BA25A1C87A97C00204FA3 /* DocInspectorView.swift */; };
-		7A5BF4611CA97CF4003F8206 /* ParametricInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5BF4601CA97CF4003F8206 /* ParametricInspector.swift */; };
+		7A5BF4701CB1A389003F8206 /* LibraryInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5BF46F1CB1A389003F8206 /* LibraryInspector.swift */; };
+		7A5BF4721CBAA69B003F8206 /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5BF4711CBAA69B003F8206 /* AppPreferences.swift */; };
 		7A9391D11A7AB390005493E6 /* GraphicInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A9391D01A7AB390005493E6 /* GraphicInspector.swift */; };
 		7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */; };
 		7AA606321C99FD4000933E34 /* TrimTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA606311C99FD4000933E34 /* TrimTools.swift */; };
@@ -65,7 +66,8 @@
 		7A3943461A70343500E1FD94 /* LineGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineGraphic.swift; sourceTree = "<group>"; };
 		7A3943481A70359B00E1FD94 /* GraphicMath.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GraphicMath.swift; sourceTree = "<group>"; };
 		7A5BA25A1C87A97C00204FA3 /* DocInspectorView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocInspectorView.swift; sourceTree = "<group>"; };
-		7A5BF4601CA97CF4003F8206 /* ParametricInspector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParametricInspector.swift; sourceTree = "<group>"; };
+		7A5BF46F1CB1A389003F8206 /* LibraryInspector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibraryInspector.swift; sourceTree = "<group>"; };
+		7A5BF4711CBAA69B003F8206 /* AppPreferences.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		7A9391D01A7AB390005493E6 /* GraphicInspector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GraphicInspector.swift; sourceTree = "<group>"; };
 		7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GroupGraphic.swift; sourceTree = "<group>"; };
 		7AA606311C99FD4000933E34 /* TrimTools.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TrimTools.swift; sourceTree = "<group>"; };
@@ -123,15 +125,16 @@
 			children = (
 				7A3943241A700FF700E1FD94 /* AppDelegate.swift */,
 				7A3943261A700FF700E1FD94 /* ArsDocument.swift */,
+				7A5BF4711CBAA69B003F8206 /* AppPreferences.swift */,
 				7AC123FC1C89FE8B006EB23F /* Dialogs.swift */,
 				7A3943281A700FF700E1FD94 /* ArsDocument.xib */,
 				7A5BA25A1C87A97C00204FA3 /* DocInspectorView.swift */,
+				7A5BF46F1CB1A389003F8206 /* LibraryInspector.swift */,
 				7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */,
 				7A3943441A7010F900E1FD94 /* DrawingView.swift */,
 				7AC3218F1A72B54200836590 /* Graphic.swift */,
 				7A9391D01A7AB390005493E6 /* GraphicInspector.swift */,
 				7A094D9B1CA2EA4000141FAE /* Parametrics.swift */,
-				7A5BF4601CA97CF4003F8206 /* ParametricInspector.swift */,
 				7AC123FE1C90893A006EB23F /* Transformers.swift */,
 				7A3943461A70343500E1FD94 /* LineGraphic.swift */,
 				7A056E191CA05353006835ED /* WallGraphic.swift */,
@@ -281,6 +284,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A5BF4701CB1A389003F8206 /* LibraryInspector.swift in Sources */,
 				7AEF043B1C81F000006CCF60 /* BezierGraphic.swift in Sources */,
 				7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */,
 				7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */,
@@ -290,9 +294,9 @@
 				7AC321901A72B54200836590 /* Graphic.swift in Sources */,
 				7A3943491A70359B00E1FD94 /* GraphicMath.swift in Sources */,
 				7A3943271A700FF700E1FD94 /* ArsDocument.swift in Sources */,
+				7A5BF4721CBAA69B003F8206 /* AppPreferences.swift in Sources */,
 				7A056E161C9DA7EF006835ED /* GraphicSymbol.swift in Sources */,
 				7A5BA25B1C87A97C00204FA3 /* DocInspectorView.swift in Sources */,
-				7A5BF4611CA97CF4003F8206 /* ParametricInspector.swift in Sources */,
 				7AC3218E1A72B4B900836590 /* WDTabBar.swift in Sources */,
 				7A3943451A7010F900E1FD94 /* DrawingView.swift in Sources */,
 				7A3943251A700FF700E1FD94 /* AppDelegate.swift in Sources */,

@@ -13,9 +13,15 @@ class WallOpening: LineGraphic
     var nominalWidth: CGFloat = 450
     var attachedWall: WallGraphic? {
         didSet {
-            if let _ = attachedWall {
+            if let wall = attachedWall {
+                wall.addOpening(self)
                 alignToWall()
             }
+        }
+    }
+    
+    override var origin: CGPoint {
+        didSet {
         }
     }
     
@@ -41,6 +47,8 @@ class WallOpening: LineGraphic
     
     override var bounds: CGRect { return rectContainingPoints([origin + offsetToWall, origin - offsetToWall, endPoint + offsetToWall, endPoint - offsetToWall]) }
     
+    override var description: String { return "Opening @ \(origin), \(endPoint)" }
+    
     required init?(coder decoder: NSCoder) {
         attachedWall = decoder.decodeObjectForKey("attached") as? WallGraphic
         super.init(coder: decoder)
@@ -62,6 +70,14 @@ class WallOpening: LineGraphic
         super.encodeWithCoder(coder)
         if let wall = attachedWall {
             coder.encodeObject(wall, forKey: "attached")
+        }
+    }
+    
+    override func unlink() {
+        super.unlink()
+        if let wall = attachedWall {
+            attachedWall = nil
+            wall.removeOpening(self)
         }
     }
     
@@ -87,6 +103,22 @@ class WallOpening: LineGraphic
             origin = newOrigin
             endPoint = newEndPoint
         }
+    }
+    
+    override func drawInView(view: DrawingView) {
+        if attachedWall == nil {
+            // see if we can attach to a wall
+            for g in view.displayList {
+                if let wall = g as? WallGraphic where g.bounds.intersects(bounds) {
+                    let cp1 = wall.centerLine.closestPointToPoint(origin, extended: false)
+                    let cp2 = wall.centerLine.closestPointToPoint(endPoint, extended: false)
+                    if cp1.distanceToPoint(origin) < SnapRadius && cp2.distanceToPoint(endPoint) < SnapRadius {
+                        attachedWall = wall
+                    }
+                }
+            }
+        }
+        super.drawInView(view)
     }
 }
 
@@ -131,12 +163,38 @@ class WallGraphic: LineGraphic
         return extendedLines
     }
     
+    override var description: String { return "Wall @ \(origin), \(endPoint), width = \(width)" }
+    
     override func recache() {
         cachedPath = nil
     }
     
     override var bounds: CGRect {
         return rectContainingPoints(boundsLines.reduce([], combine: { return $0 + $1.points })).insetBy(dx: -lineWidth, dy: -lineWidth)
+    }
+    
+    required init?(coder decoder: NSCoder) {
+        width = CGFloat(decoder.decodeDoubleForKey("width"))
+        openings = decoder.decodeObjectForKey("openings") as? [WallOpening] ?? []
+        super.init(coder: decoder)
+    }
+    
+    required init(origin: CGPoint) {
+        super.init(origin: origin)
+    }
+    
+    override init(origin: CGPoint, endPoint: CGPoint) {
+        super.init(origin: origin, endPoint: endPoint)
+    }
+    
+    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encodeWithCoder(coder: NSCoder) {
+        super.encodeWithCoder(coder)
+        coder.encodeObject(openings, forKey: "openings")
+        coder.encodeDouble(Double(width), forKey: "width")
     }
     
     func intersectionsWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
@@ -154,18 +212,23 @@ class WallGraphic: LineGraphic
         return outerLines.reduce([], combine: { $0 + $1.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)})
     }
     
-    func openingsInView(view: DrawingView) -> [WallOpening] {
-        var openings: [WallOpening] = []
-        var graphics = view.displayList
-        if let construction = view.construction {
-            graphics.append(construction)
+    func addOpening(opening: WallOpening) {
+        if !openings.contains(opening) {
+            openings.append(opening)
         }
-        for g in graphics {
-            if let opening = g as? WallOpening where opening.attachedWall == self {
-                openings.append(opening)
-            }
+    }
+    
+    func removeOpening(opening: WallOpening) {
+        openings = openings.filter { $0 != opening }
+    }
+    
+    override func unlink() {
+        super.unlink()
+        let oldOpenings = openings
+        openings = []
+        for opening in oldOpenings {
+            opening.unlink()
         }
-        return openings
     }
     
     func wallIntersectionsInView(view: DrawingView) -> [IntersectionInfo] {
@@ -317,7 +380,6 @@ class WallGraphic: LineGraphic
         drawnLines = []
         extendedLines = outerLines
         let intersections = wallIntersectionsInView(view)
-        let openings = openingsInView(view)
         
         for intersection in intersections {
             getExtendedLinesForIntersection(intersection.otherWall)
@@ -454,6 +516,9 @@ class OpeningTool: GraphicTool
     }
     
     override func mouseMoved(location: CGPoint, view: DrawingView) {
+        if let opening = view.construction as? WallOpening {
+            opening.unlink()
+        }
         for g in view.displayList {
             if let wg = g as? WallGraphic where wg.bounds.contains(location) {
                 let center = wg.centerLine.closestPointToPoint(location)
