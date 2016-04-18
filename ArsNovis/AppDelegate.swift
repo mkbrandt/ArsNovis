@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 {
     func applicationDidFinishLaunching(aNotification: NSNotification)
     {
+        NSUserDefaults.standardUserDefaults().registerDefaults(appDefaults)
         NSUserDefaults.standardUserDefaults().setBool(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")
     }
 

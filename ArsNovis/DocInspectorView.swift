@@ -17,6 +17,7 @@ class DocInspectorView: NSView
 {
     @IBOutlet var widthConstraint: NSLayoutConstraint!
     @IBOutlet var inspectorView: NSView!
+    @IBOutlet var drawingView: DrawingView!
     
     var inspectorConstraints: [NSLayoutConstraint] = []
     
@@ -45,6 +46,10 @@ class DocInspectorView: NSView
             widthConstraint.constant = 200
         } else {
             widthConstraint.constant = 0
+        }
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1000000), dispatch_get_main_queue()) {
+            self.drawingView.zoomByFactor(2.0)
+            self.drawingView.zoomByFactor(0.5)
         }
     }
     

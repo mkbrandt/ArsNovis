@@ -14,95 +14,35 @@ enum ArcInspectionMode {
 
 class ArcGraphic: Graphic
 {
-    var midPoint: CGPoint {
-        didSet { cachedPath = nil }
+    var radius: CGFloat         { didSet { cachedPath = nil }}
+    var startAngle: CGFloat     { didSet { cachedPath = nil }}
+    var endAngle: CGFloat       { didSet { cachedPath = nil }}
+    var clockwise: Bool         { didSet { cachedPath = nil }}
+    
+    var startPoint: CGPoint     {
+        get { return origin + CGPoint(length: radius, angle: startAngle) }
+        set { startAngle = (newValue - origin).angle }
     }
     
-    var endPoint: CGPoint {
-        didSet {
-            if midPoint == origin {
-                midPoint = CGPoint(x: (origin.x + endPoint.x) / 2, y: (origin.y + endPoint.y) / 2)
-                let v = midPoint - origin;
-                let r = v.length
-                let a = v.angle + PI / 2
-                let v2 = CGPoint(length: r, angle: a)
-                midPoint = midPoint + v2
-            }
-            cachedPath = nil
-        }
+    var endPoint: CGPoint     {
+        get { return origin + CGPoint(length: radius, angle: endAngle) }
+        set { endAngle = (newValue - origin).angle }
     }
     
-    var center: CGPoint {
+    var midPoint: CGPoint       {
         get {
-            let p1 = (midPoint + origin) * 0.5
-            let p2 = (midPoint + endPoint) * 0.5
-            let a1 = (origin - midPoint).angle + PI / 2
-            let a2 = (midPoint - endPoint).angle + PI / 2
-            let v1 = CGPoint(length: 100.0, angle: a1)
-            let v2 = CGPoint(length: 100.0, angle: a2)
-            let l1 = LineGraphic(origin: p1, vector: v1)
-            let l2 = LineGraphic(origin: p2, vector: v2)
-            
-            let p = l1.intersectionWithLine(l2, extendSelf: true, extendOther: true)
-            if p != nil {
-                return p!
+            let p1 = origin + CGPoint(length: radius, angle: (startAngle + endAngle) / 2)
+            if pointOnArc(p1) {
+                return p1
             }
-            return (origin + endPoint) * 0.5
+            return origin - (p1 - origin)
         }
+        set { radius = (newValue - origin).length }
     }
     
-    var radius: CGFloat {
-        get { return (center - origin).length }
-        set {
-            willChangeValueForKey("startAngle")
-            willChangeValueForKey("endAngle")
-            let cp = center
-            let ea = endAngle
-            let ma = (midPoint - center).angle
-            origin = cp + CGPoint(length: newValue, angle: startAngle)
-            midPoint = cp + CGPoint(length: newValue, angle: ma)
-            endPoint = cp + CGPoint(length: newValue, angle: ea)
-            didChangeValueForKey("startAngle")
-            didChangeValueForKey("endAngle")
-        }
-    }
+    override var description: String { return "Arc @ \(origin), \(radius), \(startAngle), \(endAngle)" }
     
-    var startAngle: CGFloat {
-        get { return (origin - center).angle }
-        set {
-            origin = center + CGPoint(length: radius, angle: newValue)
-            midPoint = center + CGPoint(length: radius, angle: (newValue + endAngle) / 2.0)
-        }
-    }
-    
-    var endAngle: CGFloat {
-        get { return (endPoint - center).angle }
-        set {
-            endPoint = center + CGPoint(length: radius, angle: newValue)
-            midPoint = center + CGPoint(length: radius, angle: (newValue + startAngle) / 2.0)
-        }
-    }
-    
-    var clockwise: Bool {
-        get {
-            let a1 = (midPoint - origin).angle
-            let a2 = (endPoint - midPoint).angle
-            
-            var a3 = a1 - a2
-            while a3 < -PI {
-                a3 += 2 * PI
-            }
-            while a3 > PI {
-                a3 -= 2 * PI
-            }
-            
-            return a3 > 0
-        }
-    }
-    
-    override var description: String { return "Arc @ \(center), \(radius)" }
-    
-    override var points: Array<CGPoint> { return [origin, midPoint, endPoint] }
+    override var points: Array<CGPoint> { return [origin, startPoint, endPoint, midPoint] }
     
     override var bounds: CGRect {
         get {
@@ -115,7 +55,7 @@ class ArcGraphic: Graphic
     }
     
     override var inspectionKeys: [String] {
-        return ["center", "radius", "startAngle", "endAngle"]
+        return ["x", "y", "radius", "startAngle", "endAngle"]
     }
     
     override var defaultInspectionKey: String {
@@ -132,52 +72,62 @@ class ArcGraphic: Graphic
     }
     
     override init(origin: CGPoint) {
-        midPoint = origin
-        endPoint = origin
+        radius = 0.0
+        startAngle = 0
+        endAngle = 0
+        clockwise = false
         super.init(origin: origin)
     }
     
-    init(origin: CGPoint, midPoint: CGPoint, endPoint: CGPoint) {
-        self.midPoint = midPoint
-        self.endPoint = endPoint
-        super.init(origin: origin)
-    }
-    
-    init(center: CGPoint, radius: CGFloat, startAngle: CGFloat, endAngle: CGFloat) {
-        let origin = center + CGPoint(length: radius, angle: startAngle)
-        endPoint = center + CGPoint(length: radius, angle: endAngle)
-        midPoint = center + CGPoint(length: radius, angle: (startAngle + endAngle) / 2)
+    init(origin: CGPoint, radius: CGFloat, startAngle: CGFloat, endAngle: CGFloat, clockwise: Bool) {
+        self.radius = radius
+        self.startAngle = startAngle
+        self.endAngle = endAngle
+        self.clockwise = clockwise
         super.init(origin: origin)
     }
     
     required init?(coder decoder: NSCoder) {
-        midPoint = decoder.decodePointForKey("midPoint")
-        endPoint = decoder.decodePointForKey("endPoint")
+        radius = CGFloat(decoder.decodeDoubleForKey("radius"))
+        startAngle = CGFloat(decoder.decodeDoubleForKey("startAngle"))
+        endAngle = CGFloat(decoder.decodeDoubleForKey("endAngle"))
+        clockwise = decoder.decodeBoolForKey("clockwise")
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(aCoder: NSCoder) {
-        super.encodeWithCoder(aCoder)
-        aCoder.encodePoint(midPoint, forKey: "midPoint")
-        aCoder.encodePoint(endPoint, forKey: "endPoint")
+    override func encodeWithCoder(coder: NSCoder) {
+        super.encodeWithCoder(coder)
+        coder.encodeDouble(Double(startAngle), forKey: "startAngle")
+        coder.encodeDouble(Double(endAngle), forKey: "endAngle")
+        coder.encodeDouble(Double(radius), forKey: "radius")
+        coder.encodeBool(clockwise, forKey: "clockwise")
     }
     
     func pointOnArc(point: CGPoint) -> Bool {
-        if point.distanceToPoint(center) > radius + 0.01 {
+        if point.distanceToPoint(origin) > radius + 0.001 {
             //print("point \(point) too far: distance = \(point.distanceToPoint(center)), radius = \(radius)")
             return false
         }
-        let arc2 = ArcGraphic(origin: origin, midPoint: point, endPoint: endPoint)
-        
-        let rv = arc2.clockwise == clockwise
-        //print("Point \(point) on arc is \(rv)")
-        return rv
+        let angle = (point - origin).angle
+        if startAngle < endAngle {
+            if angle >= startAngle && angle <= endAngle {
+                return !clockwise
+            } else {
+                return clockwise
+            }
+        } else {
+            if angle <= startAngle && angle >= endAngle {
+                return clockwise
+            } else {
+                return !clockwise
+            }
+        }
     }
     
     func intersectionsWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         var points: [CGPoint]
-        let p = line.closestPointToPoint(center, extended: true)
-        let dist = p.distanceToPoint(center)
+        let p = line.closestPointToPoint(origin, extended: true)
+        let dist = p.distanceToPoint(origin)
         
         if dist > radius {
             return []
@@ -202,7 +152,7 @@ class ArcGraphic: Graphic
     }
     
     func intersectionsWithArc(arc: ArcGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
-        let d = center.distanceToPoint(arc.center)
+        let d = origin.distanceToPoint(arc.origin)
         if d == 0 {
             return []
         }
@@ -214,17 +164,17 @@ class ArcGraphic: Graphic
         }
         
         var intersections: [CGPoint] = []
-        if center.distanceToPoint(arc.center) == radius + arc.radius {
-            var v = arc.center - center
+        if origin.distanceToPoint(arc.origin) == radius + arc.radius {
+            var v = arc.origin - origin
             v.length = radius
-            intersections = [center + v]
+            intersections = [origin + v]
         } else {
             let a = (radius * radius - arc.radius * arc.radius + d * d) / (d * 2)
             let h = sqrt(radius * radius - a * a)
-            var va = arc.center - center
+            var va = arc.origin - origin
             va.length = a
             let vh = CGPoint(length: h, angle: va.angle + PI / 2)
-            intersections = [center + va + vh, center + va - vh]
+            intersections = [origin + va + vh, origin + va - vh]
         }
 
         if !extendSelf {
@@ -250,9 +200,11 @@ class ArcGraphic: Graphic
         case 0:
             origin = point
         case 1:
-            midPoint = point
+            startPoint = point
         case 2:
             endPoint = point
+        case 3:
+            midPoint = point
         default:
             break
         }
@@ -276,11 +228,11 @@ class ArcGraphic: Graphic
     }
     
     override func snapCursor(location: CGPoint) -> SnapResult? {
-        if center.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: center, type: .Center)
-        }
         if origin.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: origin, type: .EndPoint)
+            return SnapResult(location: origin, type: .Center)
+        }
+        if startPoint.distanceToPoint(location) < SnapRadius {
+            return SnapResult(location: startPoint, type: .EndPoint)
         }
         if endPoint.distanceToPoint(location) < SnapRadius {
             return SnapResult(location: endPoint, type: .EndPoint)
@@ -293,8 +245,8 @@ class ArcGraphic: Graphic
     }
     
     override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
-        let a = (point - center).angle
-        let p = CGPoint(length: radius, angle: a) + center
+        let a = (point - origin).angle
+        let p = CGPoint(length: radius, angle: a) + origin
         
         if extended || pointOnArc(p) {
             return p
@@ -317,20 +269,16 @@ class ArcGraphic: Graphic
     override func recache() {
         cachedPath = NSBezierPath()
         
-        let r = radius
-        let a = (origin - center).angle * 180.0 / PI
-        let b = (endPoint - center).angle * 180.0 / PI
-        
         if let cachedPath = cachedPath {
-            cachedPath.moveToPoint(origin)
-            cachedPath.appendBezierPathWithArcWithCenter(center, radius: r, startAngle: a, endAngle: b, clockwise: clockwise)
+            print("origin = \(origin), radius = \(radius), startAngle = \(startAngle), endAngle = \(endAngle), clockwise = \(clockwise)")
+            cachedPath.appendBezierPathWithArcWithCenter(origin, radius: radius, startAngle: startAngle * 180 / PI, endAngle: endAngle * 180 / PI, clockwise: clockwise)
         }
     }
     
     override func divideAtPoint(point: CGPoint) -> [Graphic] {
-        let pointVector = point - center
-        let arc1 = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: pointVector.angle)
-        let arc2 = ArcGraphic(center: center, radius: radius, startAngle: pointVector.angle, endAngle: endAngle)
+        let pointVector = point - origin
+        let arc1 = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: pointVector.angle, clockwise: clockwise)
+        let arc2 = ArcGraphic(origin: origin, radius: radius, startAngle: pointVector.angle, endAngle: endAngle, clockwise: clockwise)
         return [arc1, arc2]
     }
     
@@ -340,18 +288,19 @@ class ArcGraphic: Graphic
         }
         if intersections.count > 0 {
             let intersection = intersections[0]
+            let angle = (intersection - origin).angle
             
-            if closeToPoint.distanceToPoint(origin) < closeToPoint.distanceToPoint(endPoint) {
-                return ArcGraphic(origin: intersection, midPoint: midPoint, endPoint: endPoint)
+            if closeToPoint.distanceToPoint(startPoint) < closeToPoint.distanceToPoint(endPoint) {
+                return ArcGraphic(origin: origin, radius: radius, startAngle: angle, endAngle: endAngle, clockwise: clockwise)
             } else {
-                return ArcGraphic(origin: origin, midPoint: midPoint, endPoint: intersection)
+                return ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: angle, clockwise: clockwise)
             }
         }
         return self
     }
     
     override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
-        let circle = ElipseGraphic(origin: center - CGPoint(x: radius, y: radius), size: CGSize(width: radius * 2, height: radius * 2))
+        let circle = ElipseGraphic(origin: origin - CGPoint(x: radius, y: radius), size: CGSize(width: radius * 2, height: radius * 2))
         circle.lineColor = NSColor.blueColor().colorWithAlphaComponent(0.5)
         circle.lineWidth = 0.0
         circle.ref = [self]
@@ -362,6 +311,27 @@ class ArcGraphic: Graphic
 class Arc3PtTool: GraphicTool
 {
     var state = 0
+    var startPoint = CGPoint()
+    var endPoint = CGPoint()
+    
+    func arcFromStartPoint(startPoint: CGPoint, endPoint: CGPoint, midPoint: CGPoint) -> Graphic {
+        let mp1 = (startPoint + midPoint) / 2
+        let mp2 = (endPoint + midPoint) / 2
+        let ang1 = (midPoint - startPoint).angle + PI / 2
+        let ang2 = (midPoint - endPoint).angle + PI / 2
+        let bisector1 = LineGraphic(origin: mp1, vector: CGPoint(length: 100, angle: ang1))
+        let bisector2 = LineGraphic(origin: mp2, vector: CGPoint(length: 100, angle: ang2))
+        if let origin = bisector1.intersectionWithLine(bisector2, extendSelf: true, extendOther: true) {
+            let radius = (startPoint - origin).length
+            let startAngle = (startPoint - origin).angle
+            let endAngle = (endPoint - origin).angle
+            let clockwise = true
+            let g = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise)
+            g.clockwise = g.pointOnArc(midPoint)
+            return g
+        }
+        return LineGraphic(origin: startPoint, endPoint: endPoint)
+    }
     
     override func cursor() -> NSCursor {
         return NSCursor.crosshairCursor()
@@ -376,30 +346,26 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
         switch state {
         case 0:
-            view.construction = ArcGraphic(origin: location)
+            startPoint = location
         case 1:
-            if let ag = view.construction as? ArcGraphic {
-                ag.endPoint = location
-            }
+            endPoint = location
+            view.construction = LineGraphic(origin: startPoint, endPoint: endPoint)
         default:
-            if let ag = view.construction as? ArcGraphic {
-                ag.midPoint = location
-            }
+            view.construction = arcFromStartPoint(startPoint, endPoint: endPoint, midPoint: location)
         }
         view.redrawConstruction()
     }
     
     override func mouseMoved(location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
-        if let ag = view.construction as? ArcGraphic {
-            switch state {
-            case 0:
-                break
-            case 1:
-                ag.endPoint = location
-            default:
-                ag.midPoint = location
-            }
+        switch state {
+        case 0:
+            break
+        case 1:
+            endPoint = location
+            view.construction = LineGraphic(origin: startPoint, endPoint: endPoint)
+        default:
+            view.construction = arcFromStartPoint(startPoint, endPoint: endPoint, midPoint: location)
         }
         view.redrawConstruction()
     }
@@ -439,10 +405,10 @@ class Arc3PtTool: GraphicTool
 class ArcCenterTool: GraphicTool
 {
     var state = 0
-    var center = CGPoint()
+    var origin = CGPoint()
     var radius = CGFloat(0)
     var startAngle = CGFloat(0)
-    var lastMidPoint = CGPoint()
+    var clockwise = false
     
     override func cursor() -> NSCursor {
         return NSCursor.crosshairCursor()
@@ -470,27 +436,16 @@ class ArcCenterTool: GraphicTool
         case 0:
             break
         default:
-            var endAngle = (location - center).angle
-            var midAngle = (lastMidPoint - center).angle
+            let endAngle = (location - origin).angle
+            let diffAngle = endAngle - startAngle
             
-            if startAngle > PI / 2 && endAngle < 0 {
-                endAngle += 2 * PI
-            } else if startAngle < -PI / 2 && endAngle > 0 {
-                endAngle -= 2 * PI
+            if 0 < diffAngle && diffAngle < PI / 90 {
+                clockwise = false
+            } else if 0 > diffAngle && diffAngle > -PI / 90 {
+                clockwise = true
             }
-            
-            if startAngle > PI / 2 && midAngle < 0 {
-                midAngle += 2 * PI
-            } else if startAngle < -PI / 2 && midAngle > 0 {
-                midAngle -= 2 * PI
-            }
-            
-            let arc = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle)
-            if (midAngle - startAngle > PI / 4 && endAngle - startAngle < 0 || midAngle - startAngle < -PI / 4 && endAngle - startAngle > 0) {
-                    arc.midPoint = lastMidPoint
-            } else {
-                lastMidPoint = arc.midPoint
-            }
+
+            let arc = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise)
             view.construction = arc
         }
         view.redrawConstruction()
@@ -515,11 +470,10 @@ class ArcCenterTool: GraphicTool
         case 0:
             state = 1
             if let line = view.construction as? LineGraphic {
-                center = line.origin
+                origin = line.origin
                 radius = line.length
                 startAngle = line.angle
-                lastMidPoint = location
-                view.construction = ArcGraphic(center: center, radius: radius, startAngle: startAngle, endAngle: startAngle)
+                view.construction = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: startAngle, clockwise: clockwise)
                 print("construction = \(view.construction)")
             }
             view.setDrawingHint("Arc from center: Set end angle")

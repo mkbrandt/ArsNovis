@@ -8,11 +8,6 @@
 
 import Cocoa
 
-var DIMENSION_ARROW_WIDTH: CGFloat = 6
-var DIMENSION_ARROW_LENGTH: CGFloat = 12
-var DIMENSION_TEXT_SIZE: CGFloat = 12
-var DIMENSION_TEXT_FONT = NSFont.systemFontOfSize(12)
-
 class LinearDimension: Graphic
 {
     var text = "#{dim}"
@@ -20,8 +15,13 @@ class LinearDimension: Graphic
     var endPoint: CGPoint
     var verticalOffset: CGFloat = 40
     var horizontalOffset: CGFloat = 0
-    var fontSize = DIMENSION_TEXT_SIZE
-    var fontDescriptor = DIMENSION_TEXT_FONT.fontDescriptor
+    var fontSize = applicationDefaults.dimensionFontSize
+    var fontDescriptor = applicationDefaults.dimensionFont.fontDescriptor
+    
+    var font: NSFont {
+        get { return NSFont(descriptor: fontDescriptor, size: fontSize)! }
+        set { fontDescriptor = newValue.fontDescriptor; fontSize = newValue.pointSize }
+    }
     
     var measurement: CGPoint        { return endPoint - origin }
     var leadAngle: CGFloat          { return measurement.angle + PI / 2 }
@@ -127,8 +127,8 @@ class LinearDimension: Graphic
         CGContextStrokePath(context)
         
         // add arrows
-        let arrowLength = view.scaleFloatToDrawing(DIMENSION_ARROW_LENGTH)
-        let arrowWidth = view.scaleFloatToDrawing(DIMENSION_ARROW_WIDTH)
+        let arrowLength = view.scaleFloatToDrawing(applicationDefaults.dimensionArrowLength)
+        let arrowWidth = view.scaleFloatToDrawing(applicationDefaults.dimensionArrowWidth)
         
         CGContextMoveToPoint(context, 0, y1)
         CGContextAddLineToPoint(context, arrowLength, y1 - arrowWidth / 2)
@@ -148,7 +148,7 @@ class LinearDimension: Graphic
         dim.drawAtPoint(textRect.origin, withAttributes: attrib)
         
         CGContextRestoreGState(context)
-        if showHandles {
+        if selected {
             drawHandlesInView(view)
         }
     }

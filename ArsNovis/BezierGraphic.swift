@@ -142,7 +142,7 @@ class BezierGraphic: Graphic
     }
     
     override var bounds: CGRect {
-        if showHandles {
+        if selected {
             return rectContainingPoints(points).insetBy(dx: -lineWidth, dy: -lineWidth)
         } else {
             return path.bounds
@@ -281,7 +281,7 @@ class BezierGraphic: Graphic
     override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
         var points = segments.map { return $0.closestPointToPoint(point) }
         
-        if showHandles {
+        if selected {
             points = self.points + points
         }
         
@@ -351,7 +351,7 @@ class BezierTool: GraphicTool
         if let construct = view.construction as? BezierGraphic {
             if construct.arcs.count > 1 {
                 construct.arcs.removeLast()
-                construct.showHandles = false
+                construct.selected = false
                 view.addConstruction()
             } else {
                 view.construction = nil
@@ -369,7 +369,7 @@ class BezierTool: GraphicTool
                 if construct.arcs.count > 1 {
                     construct.arcs.removeLast()
                 }
-                construct.showHandles = false
+                construct.selected = false
                 view.addConstruction()
                 view.needsDisplay = true
             } else {
@@ -378,7 +378,7 @@ class BezierTool: GraphicTool
             }
         } else {
             let g = BezierGraphic(origin: location)
-            g.showHandles = true
+            g.selected = true
             view.construction = g
             firstDrag = true
             firstArc = true

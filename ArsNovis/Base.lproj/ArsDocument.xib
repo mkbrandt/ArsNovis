@@ -118,7 +118,7 @@
                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                     <subviews>
                                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="123" rowSizeStyle="automatic" viewBased="YES" id="cKA-WE-hRf">
-                                                            <rect key="frame" x="0.0" y="0.0" width="200" height="218"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="200" height="0.0"/>
                                                             <autoresizingMask key="autoresizingMask"/>
                                                             <size key="intercellSpacing" width="3" height="2"/>
                                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -247,6 +247,7 @@
                             <constraint firstAttribute="width" constant="200" id="xng-8w-kBR"/>
                         </constraints>
                         <connections>
+                            <outlet property="drawingView" destination="MQl-G6-Nsf" id="0NO-Ha-5Kh"/>
                             <outlet property="inspectorView" destination="ITS-w3-WS8" id="zF8-Ay-NWW"/>
                             <outlet property="widthConstraint" destination="xng-8w-kBR" id="WQg-3x-uVf"/>
                         </connections>
@@ -362,6 +363,9 @@
                                 <font key="font" metaFont="system"/>
                             </buttonCell>
                         </button>
+                        <connections>
+                            <action selector="rotateSelected:" target="MQl-G6-Nsf" id="5R9-97-fz8"/>
+                        </connections>
                     </toolbarItem>
                 </allowedToolbarItems>
                 <defaultToolbarItems>
@@ -1133,6 +1137,16 @@ Gw
                             <action selector="setSelectTool:" target="MQl-G6-Nsf" id="q6f-4g-Qwe"/>
                         </connections>
                     </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="QvE-3h-eIm">
+                        <rect key="frame" x="47" y="329" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="TextTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="69o-ej-fSN">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setTextTool:" target="MQl-G6-Nsf" id="5z1-MO-GBG"/>
+                        </connections>
+                    </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yyG-gX-Nns">
                         <rect key="frame" x="0.0" y="282" width="48" height="48"/>
                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="LineTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Exz-RR-6Qc">
@@ -1153,6 +1167,26 @@ Gw
                             <action selector="setRectTool:" target="MQl-G6-Nsf" id="4Xe-XO-vDb"/>
                         </connections>
                     </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iT3-yQ-pfO">
+                        <rect key="frame" x="47" y="235" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CenterRectTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="3Rc-6L-p9v">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setCenterRectTool:" target="MQl-G6-Nsf" id="2hj-NW-pgM"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BmJ-QT-ZoI">
+                        <rect key="frame" x="94" y="235" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="ElipseTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="qzv-Wc-H0T">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setElipseTool:" target="MQl-G6-Nsf" id="s41-0Y-WG2"/>
+                        </connections>
+                    </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="R8G-U2-PuO">
                         <rect key="frame" x="0.0" y="188" width="48" height="48"/>
                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CenterCircleTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="eKU-vq-E4g">
@@ -1160,7 +1194,7 @@ Gw
                             <font key="font" metaFont="system"/>
                         </buttonCell>
                         <connections>
-                            <action selector="setCenterElipseTool:" target="MQl-G6-Nsf" id="255-4L-tzn"/>
+                            <action selector="setRadiusCircleTool:" target="MQl-G6-Nsf" id="ogm-d7-r0y"/>
                         </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="d3u-tP-UuQ">
@@ -1220,7 +1254,7 @@ Gw
                             <font key="font" metaFont="system"/>
                         </buttonCell>
                         <connections>
-                            <action selector="setElipseTool:" target="MQl-G6-Nsf" id="xcN-tg-Mzu"/>
+                            <action selector="setDiameterCircleTool:" target="MQl-G6-Nsf" id="D3H-HN-uPU"/>
                         </connections>
                     </button>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="cTb-b2-4XI">
@@ -1293,6 +1327,16 @@ Gw
                             <action selector="setOpeningTool:" target="MQl-G6-Nsf" id="DQd-8o-faV"/>
                         </connections>
                     </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hl2-Km-6xc">
+                        <rect key="frame" x="141" y="235" width="48" height="48"/>
+                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="CenterElipseTool" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ldM-9T-w75">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="setCenterElipseTool:" target="MQl-G6-Nsf" id="nGH-ic-Thg"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
             <point key="canvasLocation" x="-932.5" y="-268.5"/>
@@ -1304,7 +1348,7 @@ Gw
                 <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Jv-ta-pLy">
                     <rect key="frame" x="0.0" y="134" width="200" height="366"/>
                     <clipView key="contentView" ambiguous="YES" id="I4j-Ml-N8t">
-                        <rect key="frame" x="1" y="23" width="198" height="342"/>
+                        <rect key="frame" x="1" y="0.0" width="198" height="365"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" headerView="s8m-ki-8X4" viewBased="YES" id="vf2-tp-0fb">
@@ -1400,10 +1444,10 @@ Gw
                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </clipView>
                     <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="avi-ID-P6T">
-                        <rect key="frame" x="1" y="349" width="198" height="16"/>
+                        <rect key="frame" x="1" y="7" width="0.0" height="16"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
-                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="FA8-Cs-iUy">
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="FA8-Cs-iUy">
                         <rect key="frame" x="224" y="17" width="15" height="102"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </scroller>
@@ -1422,9 +1466,12 @@ Gw
         <image name="BezierTool" width="48" height="48"/>
         <image name="BreakAt" width="48" height="48"/>
         <image name="CenterCircleTool" width="48" height="48"/>
+        <image name="CenterElipseTool" width="48" height="48"/>
+        <image name="CenterRectTool" width="48" height="48"/>
         <image name="CornerCircleTool" width="48" height="48"/>
         <image name="CornerTrim" width="48" height="48"/>
         <image name="DocumentInspector" width="16" height="24"/>
+        <image name="ElipseTool" width="48" height="48"/>
         <image name="Flip Horizontal" width="48" height="48"/>
         <image name="Flip Vertical" width="48" height="48"/>
         <image name="HorizontalDim" width="48" height="48"/>
@@ -1440,6 +1487,7 @@ Gw
         <image name="Rotate" width="48" height="48"/>
         <image name="SelectTool" width="48" height="48"/>
         <image name="ShowInspector" width="32" height="25"/>
+        <image name="TextTool" width="48" height="48"/>
         <image name="TrimFrom" width="48" height="48"/>
         <image name="TrimTo" width="48" height="48"/>
         <image name="VerticalDim" width="48" height="48"/>

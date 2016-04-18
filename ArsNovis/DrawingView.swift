@@ -38,12 +38,15 @@ class DrawingView: ZoomView, ParametricContextDelegate
     
     var selection: [Graphic] = [] {
         willSet {
-            selection.forEach { $0.showHandles = false }
+            selection.forEach { $0.selected = false }
             willChangeValueForKey("parametricContext")
         }
         didSet {
-            selection.forEach { $0.showHandles = true }
-            if selection.count == 1 {
+            selection.forEach { $0.selected = true }
+            if selection.count == 0 {
+                inspector?.removeAllSubviews()
+                NSFontManager.sharedFontManager().setSelectedFont(applicationDefaults.textFont, isMultiple: false)
+            } else if selection.count == 1 {
                 inspector?.beginInspection(selection[0])
             } else {
                 inspector?.removeAllSubviews()
@@ -236,6 +239,8 @@ class DrawingView: ZoomView, ParametricContextDelegate
     func drawGridInRect(dirtyRect: CGRect, layer: ArsLayer)
     {
         if let document = document where NSGraphicsContext.currentContextDrawingToScreen() {
+            let drawMinor = layer.minorGrid * scale > 4
+            let drawMajor = layer.majorGrid * scale > 4
             let gridSize = layer.minorGrid / document.page.pageScale
             let divsPerMajor = round(layer.majorGrid / document.layer.minorGrid)
             let xs = floor((dirtyRect.origin.x - gridSize) / gridSize) * gridSize
@@ -248,17 +253,23 @@ class DrawingView: ZoomView, ParametricContextDelegate
             NSColor.blueColor().colorWithAlphaComponent(0.5).set()
             var x = xs
             while x <= right {
-                let linewidth = CGFloat(fmod((x / gridSize), divsPerMajor) == 0 ? 0.25 : 0.1)
-                NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
-                NSBezierPath.strokeLineFromPoint(CGPoint(x: x, y: top), toPoint: CGPoint(x: x, y: bottom))
+                let isMajor = fmod((x / gridSize), divsPerMajor) == 0
+                let linewidth = CGFloat(isMajor ? 0.25 : 0.1)
+                if drawMajor && isMajor || drawMinor {
+                    NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
+                    NSBezierPath.strokeLineFromPoint(CGPoint(x: x, y: top), toPoint: CGPoint(x: x, y: bottom))
+                }
                 x += gridSize
             }
             
             var y = ys
             while y <= top {
-                let linewidth = CGFloat(fmod((y / gridSize), divsPerMajor) == 0 ? 0.25 : 0.1)
-                NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
-                NSBezierPath.strokeLineFromPoint(CGPoint(x: left, y: y), toPoint: CGPoint(x: right, y: y))
+                let isMajor = fmod((y / gridSize), divsPerMajor) == 0
+                let linewidth = CGFloat(isMajor ? 0.25 : 0.1)
+                if drawMajor && isMajor || drawMinor {
+                    NSBezierPath.setDefaultLineWidth(scaleFloat(linewidth))
+                    NSBezierPath.strokeLineFromPoint(CGPoint(x: left, y: y), toPoint: CGPoint(x: right, y: y))
+                }
                 y += gridSize
             }
         }
@@ -747,6 +758,13 @@ class DrawingView: ZoomView, ParametricContextDelegate
         window?.invalidateCursorRectsForView(self)
     }
     
+    @IBAction func setCenterRectTool(sender: AnyObject?) {
+        tool = CenterRectTool()
+        menuButton.image = NSImage(named: "CenterRectTool")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
     @IBAction func setArc3Tool(sender: AnyObject?) {
         tool = Arc3PtTool()
         menuButton.image = NSImage(named: "Arc3Point")
@@ -770,14 +788,28 @@ class DrawingView: ZoomView, ParametricContextDelegate
     
     @IBAction func setElipseTool(sender: AnyObject?) {
         tool = ElipseTool()
-        menuButton.image = NSImage(named: "CornerCircleTool")
+        menuButton.image = NSImage(named: "ElipseTool")
         menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
     
     @IBAction func setCenterElipseTool(sender: AnyObject?) {
         tool = CenterElipseTool()
+        menuButton.image = NSImage(named: "CenterElipseTool")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setRadiusCircleTool(sender: AnyObject?) {
+        tool = RadiusCircleTool()
         menuButton.image = NSImage(named: "CenterCircleTool")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setDiameterCircleTool(sender: AnyObject?) {
+        tool = DiameterCircleTool()
+        menuButton.image = NSImage(named: "CornerCircleTool")
         menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
@@ -827,6 +859,13 @@ class DrawingView: ZoomView, ParametricContextDelegate
     @IBAction func setVerticalDimensionTool(sender: AnyObject?) {
         tool = VerticalDimensionTool()
         menuButton.image = NSImage(named: "VerticalDim")
+        menuWindow.orderOut(self)
+        window?.invalidateCursorRectsForView(self)
+    }
+    
+    @IBAction func setTextTool(sender: AnyObject?) {
+        tool = TextTool()
+        menuButton.image = NSImage(named: "TextTool")
         menuWindow.orderOut(self)
         window?.invalidateCursorRectsForView(self)
     }
@@ -920,6 +959,30 @@ class DrawingView: ZoomView, ParametricContextDelegate
             let g = GroupGraphic(contents: selection)
             let center = g.centerOfPoints()
             g.flipVerticalAroundPoint(center)
+        }
+        needsDisplay = true
+    }
+    
+    override func changeFont(sender: AnyObject?) {
+        let fontManager = NSFontManager.sharedFontManager()
+        if selection.count == 0 {
+            applicationDefaults.textFont = fontManager.convertFont(applicationDefaults.textFont)
+        }
+        selection.forEach {
+            if let tg = $0 as? TextGraphic {
+                tg.font = fontManager.convertFont(tg.font)
+            } else if let dg = $0 as? LinearDimension {
+                dg.font = fontManager.convertFont(dg.font)
+            }
+        }
+        needsDisplay = true
+    }
+    
+    func changeAttributes(sender: AnyObject?) {
+        let fontManager = NSFontManager.sharedFontManager()
+        selection.forEach { g in
+            let attr = fontManager.convertAttributes([NSForegroundColorAttributeName: g.lineColor])
+            g.lineColor = attr[NSForegroundColorAttributeName] as? NSColor ?? g.lineColor
         }
         needsDisplay = true
     }

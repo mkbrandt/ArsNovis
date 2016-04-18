@@ -20,6 +20,7 @@ class TrimToTool: GraphicTool
     
     override func escape(view: DrawingView) {
         view.selection = []
+        view.construction = nil
     }
     
     override func mouseDown(location: CGPoint, view: DrawingView) {

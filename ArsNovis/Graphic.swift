@@ -60,7 +60,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     var lineColor = NSColor.blackColor()
     var fillColor: NSColor?
     var cachedPath: NSBezierPath?
-    var showHandles = false             { didSet { cachedPath = nil }}
+    var selected = false             { didSet { cachedPath = nil }}
     var isActive = true
     var identifier: Int
     var ref: [Graphic] = []
@@ -199,6 +199,11 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
+    /// Override to allow editing in the drawing view
+    
+    func editDoubleClick(location: CGPoint, view: DrawingView) {
+    }
+    
     // Graphic
     
     func setPoint(point: CGPoint, atIndex index: Int)
@@ -328,7 +333,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
             }
         }
         
-        if showHandles {
+        if selected {
             drawHandlesInView(view)
         }
     }

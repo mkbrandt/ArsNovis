@@ -410,7 +410,7 @@ class WallGraphic: LineGraphic
         
         path.lineWidth = view.scaleFloat(lineWidth)
         path.stroke()
-        if showHandles {
+        if selected {
             drawHandlesInView(view)
         }
         for g in ref {

@@ -10,6 +10,8 @@
 		7A056E161C9DA7EF006835ED /* GraphicSymbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A056E151C9DA7EF006835ED /* GraphicSymbol.swift */; };
 		7A056E1A1CA05353006835ED /* WallGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A056E191CA05353006835ED /* WallGraphic.swift */; };
 		7A094D9C1CA2EA4000141FAE /* Parametrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A094D9B1CA2EA4000141FAE /* Parametrics.swift */; };
+		7A1A49C11CC1882600E723DA /* CircleGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1A49C01CC1882600E723DA /* CircleGraphic.swift */; };
+		7A1A49C31CC2A02800E723DA /* TextGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1A49C21CC2A02800E723DA /* TextGraphic.swift */; };
 		7A3943251A700FF700E1FD94 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3943241A700FF700E1FD94 /* AppDelegate.swift */; };
 		7A3943271A700FF700E1FD94 /* ArsDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A3943261A700FF700E1FD94 /* ArsDocument.swift */; };
 		7A39432A1A700FF700E1FD94 /* ArsDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7A3943281A700FF700E1FD94 /* ArsDocument.xib */; };
@@ -52,6 +54,8 @@
 		7A056E151C9DA7EF006835ED /* GraphicSymbol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GraphicSymbol.swift; sourceTree = "<group>"; };
 		7A056E191CA05353006835ED /* WallGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WallGraphic.swift; sourceTree = "<group>"; };
 		7A094D9B1CA2EA4000141FAE /* Parametrics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Parametrics.swift; sourceTree = "<group>"; };
+		7A1A49C01CC1882600E723DA /* CircleGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircleGraphic.swift; sourceTree = "<group>"; };
+		7A1A49C21CC2A02800E723DA /* TextGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextGraphic.swift; sourceTree = "<group>"; };
 		7A39431F1A700FF700E1FD94 /* ArsNovis.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArsNovis.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A3943231A700FF700E1FD94 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7A3943241A700FF700E1FD94 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -139,11 +143,13 @@
 				7A3943461A70343500E1FD94 /* LineGraphic.swift */,
 				7A056E191CA05353006835ED /* WallGraphic.swift */,
 				7AC321911A72B6B700836590 /* RectGraphic.swift */,
+				7A1A49C01CC1882600E723DA /* CircleGraphic.swift */,
 				7AC321931A72B73100836590 /* ArcGraphic.swift */,
 				7AEF043A1C81F000006CCF60 /* BezierGraphic.swift */,
 				7AA6062F1C99ADD500933E34 /* GroupGraphic.swift */,
 				7A056E151C9DA7EF006835ED /* GraphicSymbol.swift */,
 				7AC321951A72B75E00836590 /* SelectTool.swift */,
+				7A1A49C21CC2A02800E723DA /* TextGraphic.swift */,
 				7AA606311C99FD4000933E34 /* TrimTools.swift */,
 				7AA606331C9B74DA00933E34 /* Dimensions.swift */,
 				7AC3218D1A72B4B900836590 /* WDTabBar.swift */,
@@ -286,6 +292,7 @@
 			files = (
 				7A5BF4701CB1A389003F8206 /* LibraryInspector.swift in Sources */,
 				7AEF043B1C81F000006CCF60 /* BezierGraphic.swift in Sources */,
+				7A1A49C31CC2A02800E723DA /* TextGraphic.swift in Sources */,
 				7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */,
 				7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */,
 				7AC123FD1C89FE8B006EB23F /* Dialogs.swift in Sources */,
@@ -306,6 +313,7 @@
 				7A094D9C1CA2EA4000141FAE /* Parametrics.swift in Sources */,
 				7AA606341C9B74DA00933E34 /* Dimensions.swift in Sources */,
 				7A3943471A70343500E1FD94 /* LineGraphic.swift in Sources */,
+				7A1A49C11CC1882600E723DA /* CircleGraphic.swift in Sources */,
 				7AC321961A72B75E00836590 /* SelectTool.swift in Sources */,
 				7A056E1A1CA05353006835ED /* WallGraphic.swift in Sources */,
 				7AA606321C99FD4000933E34 /* TrimTools.swift in Sources */,

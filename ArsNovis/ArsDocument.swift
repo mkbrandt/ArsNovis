@@ -28,6 +28,11 @@ enum GridMode: Int {
 
 var measurementUnits: MeasurementUnits = .Feet_frac
 
+class ArsDefaults: NSObject
+{
+    var defaultUnits: MeasurementUnits = .Feet_frac
+}
+
 class ArsLayer: NSObject, NSCoding
 {
     var name: String = "untitled"
@@ -161,15 +166,25 @@ class ArsPage: NSObject, NSCoding
         }
     }
     
+    override init() {
+        super.init()
+        pageScale = applicationDefaults.pageScale
+        if let pageSize = applicationDefaults.pageSize {
+            pageRect = CGRect(origin: CGPoint(x: 0, y: 0), size: pageSize)
+        }
+    }
+    
     init(name: String, printInfo: NSPrintInfo?) {
         super.init()
         self.name = name
+        pageScale = applicationDefaults.pageScale
+        if let pageSize = applicationDefaults.pageSize {
+            pageRect = CGRect(origin: CGPoint(x: 0, y: 0), size: pageSize)
+        }
         if let printInfo = printInfo {
             let sizeDiff = printInfo.paperSize - printInfo.imageablePageBounds.size
             borderInset = max(sizeDiff.width, sizeDiff.height) / 2
         }
-        parametricContext.setValue(CGFloat(120), forUndefinedKey: "test1")
-        parametricContext.setValue(CGFloat(200), forUndefinedKey: "test2")
     }
     
     required init?(coder decoder: NSCoder) {
@@ -206,6 +221,7 @@ class ArsPage: NSObject, NSCoding
 class ArsWorkspace: NSObject, NSCoding
 {
     var pages: [ArsPage] = []
+    var defaults: ArsDefaults = ArsDefaults()
     
     override init() {
         super.init()
@@ -285,8 +301,11 @@ class ArsDocument: NSDocument
                 drawingView?.zoomToAbsoluteScale(scale)
                 drawingView?.scrollPointToCenter(centeredPoint)
             } else {
-                drawingView?.zoomByFactor(100)
-                drawingView?.zoomByFactor(0.01)
+                if page.pageRect != nil {
+                    drawingView?.zoomToFit(self)
+                } else {
+                    drawingView?.zoomByFactor(page.pageScale)
+                }
             }
         }
     }
@@ -434,6 +453,13 @@ class ArsDocument: NSDocument
         }
     }
     
+// MARK: Window Delegate
+    
+    func windowDidResize(notification: NSNotification) {
+        drawingView?.zoomByFactor(2)
+        drawingView?.zoomByFactor(0.5)
+    }
+    
 // MARK: Printing
     
     override func preparePageLayout(pageLayout: NSPageLayout) -> Bool {
@@ -570,6 +596,6 @@ class ArsDocument: NSDocument
                 }
             }
         }
-    }
+    }    
 }
 

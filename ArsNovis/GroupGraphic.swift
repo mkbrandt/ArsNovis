@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class GroupGraphic: RectGraphic
+class GroupGraphic: Graphic
 {
     var contents: [Graphic] = []
     
@@ -17,7 +17,7 @@ class GroupGraphic: RectGraphic
         set { moveOriginTo(newValue) }
     }
     
-    override var size: NSSize {
+    var size: NSSize {
         set {
             willChangeValueForKey("width")
             willChangeValueForKey("height")
@@ -29,6 +29,14 @@ class GroupGraphic: RectGraphic
         get {
             return bounds.size
         }
+    }
+    
+    override var points: [CGPoint] {
+        let topLeft = origin + CGPoint(x: 0, y: size.height)
+        let topRight = origin + CGPoint(x: size.width, y: size.height)
+        let bottomRight = origin + CGPoint(x: size.width, y: 0)
+        
+        return [origin, topLeft, topRight, bottomRight]
     }
     
     override var bounds: CGRect {
@@ -62,8 +70,36 @@ class GroupGraphic: RectGraphic
     }
     
     override func moveOriginBy(vector: CGPoint) {
+        willChangeValueForKey("origin")
+        willChangeValueForKey("x")
+        willChangeValueForKey("y")
         for g in contents {
             g.moveOriginBy(vector)
+        }
+        didChangeValueForKey("origin")
+        didChangeValueForKey("x")
+        didChangeValueForKey("y")
+    }
+    
+    override func setPoint(point: CGPoint, atIndex index: Int) {
+        switch index {
+        case 0:
+            let sizeDiff = point - origin
+            moveOriginTo(point)
+            size = CGSize(width: size.width - sizeDiff.x, height: size.height - sizeDiff.y)
+        case 1:
+            let sizeDiff = point - points[1]
+            moveOriginTo(CGPoint(x: point.x, y: origin.y))
+            size = CGSize(width: size.width - sizeDiff.x, height: size.height + sizeDiff.y)
+        case 2:
+            let sizeDiff = point - points[2]
+            size = CGSize(width: size.width + sizeDiff.x, height: size.height + sizeDiff.y)
+        case 3:
+            let sizeDiff = point - points[3]
+            moveOriginTo(CGPoint(x: origin.x, y: point.y))
+            size = CGSize(width: size.width + sizeDiff.x, height: size.height - sizeDiff.y)
+        default:
+            break
         }
     }
     
@@ -96,7 +132,7 @@ class GroupGraphic: RectGraphic
         for g in contents {
             g.drawInView(view)
         }
-        if showHandles {
+        if selected {
             drawHandlesInView(view)
         }
     }

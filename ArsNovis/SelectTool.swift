@@ -33,9 +33,17 @@ class SelectTool: GraphicTool
     
     override func escape(view: DrawingView) {
         view.selection = []
+        view.snapConstructions = []
     }
     
     override func mouseDown(location: CGPoint, view: DrawingView) {
+        if view.mouseClickCount == 2 {
+            if view.selection.count == 1 {
+                let g = view.selection[0]
+                g.editDoubleClick(location, view: view)
+                return
+            }
+        }
         let handleSize = view.scaleFloat(HSIZE)
         mode = SelectionMode.Select
         restoreOnMove = false
