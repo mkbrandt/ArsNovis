@@ -19,13 +19,21 @@ class CircleGraphic: Graphic
     
     var asArc: ArcGraphic   { return ArcGraphic(origin: origin, radius: radius, startAngle: 0, endAngle: 2 * PI, clockwise: false) }
     
+    override var inspectionName: String { return "Circle" }
+    
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Radius", key: "radius", type: .distance),
+        ]
+    }
+    
     init(origin: CGPoint, radius: CGFloat) {
         self.radius = radius
         super.init(origin: origin)
     }
     
     required init?(coder decoder: NSCoder) {
-        radius = CGFloat(decoder.decodeDoubleForKey("radius"))
+        radius = CGFloat(decoder.decodeDouble(forKey: "radius"))
         super.init(coder: decoder)
     }
     
@@ -33,18 +41,18 @@ class CircleGraphic: Graphic
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeDouble(Double(radius), forKey: "radius")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(Double(radius), forKey: "radius")
     }
     
     override func recache() {
         cachedPath = NSBezierPath()
         cachedPath?.lineWidth = lineWidth
-        cachedPath?.appendBezierPathWithOvalInRect(bounds)
+        cachedPath?.appendOval(in: bounds)
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             origin = point
@@ -55,7 +63,7 @@ class CircleGraphic: Graphic
         }
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let circle = g as? CircleGraphic {
             return asArc.intersectionsWithGraphic(circle.asArc, extendSelf: true, extendOther: true)
         } else {
@@ -63,7 +71,7 @@ class CircleGraphic: Graphic
         }
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         let angle = (point - origin).angle
         let possible = origin + CGPoint(length: radius, angle: angle)
         if origin.distanceToPoint(point) < possible.distanceToPoint(point) {
@@ -73,24 +81,24 @@ class CircleGraphic: Graphic
         }
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
         if rect.contains(origin) {
             return true
         }
         return asArc.shouldSelectInRect(rect)
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         let cp = closestPointToPoint(location, extended: true)
         if origin.distanceToPoint(cp) < SnapRadius {
-            return SnapResult(location: origin, type: .Center)
+            return SnapResult(location: origin, type: .center)
         } else if abs(origin.distanceToPoint(location) - radius) < SnapRadius {
-            return SnapResult(location: cp, type: .On)
+            return SnapResult(location: cp, type: .on)
         }
         return nil
     }
     
-    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+    override func divideAtPoint(_ point: CGPoint) -> [Graphic] {
         return asArc.divideAtPoint(point)
     }
 }
@@ -99,27 +107,27 @@ class RadiusCircleTool: GraphicTool
 {
     var start = CGPoint()
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Circle: draw radius")
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         start = location
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         view.construction = CircleGraphic(origin: start, radius: start.distanceToPoint(location))
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         view.addConstruction()
         view.redrawConstruction()
@@ -128,11 +136,11 @@ class RadiusCircleTool: GraphicTool
 
 class DiameterCircleTool: RadiusCircleTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Circle: draw diameter")
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         let origin = (start + location) / 2
         view.construction = CircleGraphic(origin: origin, radius: origin.distanceToPoint(location))

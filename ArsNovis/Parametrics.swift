@@ -6,138 +6,268 @@
 //  Copyright © 2016 WalkingDog Design. All rights reserved.
 //
 
-import Foundation
+import Cocoa
 
 enum MeasurementType: Int {
-    case Distance, Angle
+    case distance, angle
 }
 
 /// Parametric Value - represents a property of type CGFloat or CGPoint
 
-class ParametricNode: NSObject, NSCoding
+class ParametricNode: NSObject, NSCoding, NSPasteboardReading, NSPasteboardWriting
 {
-    var context: ParametricContext
+    var context: ParametricContext?
     var value: NSValue
+    var image = NSImage()
+    var count: Int          { return 1 }
     
-    init(context: ParametricContext) {
+    init(context: ParametricContext?) {
         self.context = context
         value = 0
         super.init()
+        createImage()
     }
     
     required init?(coder decoder: NSCoder) {
-        if let context = decoder.decodeObjectForKey("context") as? ParametricContext {
+        if let context = decoder.decodeObject(forKey: "context") as? ParametricContext {
             self.context = context
             self.value = 0
         } else {
             return nil
         }
         super.init()
+        createImage()
     }
     
-    func encodeWithCoder(encoder: NSCoder) {
-        encoder.encodeObject(context, forKey: "context")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    static func readableTypes(for pasteboard: NSPasteboard) -> [String] {
+        return [ParametricItemUTI]
+    }
+    
+    func writableTypes(for pasteboard: NSPasteboard) -> [String] {
+        return [ParametricItemUTI]
+    }
+    
+    func pasteboardPropertyList(forType type: String) -> AnyObject?
+    {
+        let data = NSKeyedArchiver.archivedData(withRootObject: self)
+        return data
+    }
+    
+    func encode(with encoder: NSCoder) {
+        encoder.encode(context, forKey: "context")
     }
     
     var isVariable: Bool { return false }
     
     override var description: String { return "node" }
     
-    func dependsOn(node: ParametricNode) -> Bool {
+    func dependsOn(_ node: ParametricNode) -> Bool {
         return node == self
     }
     
     var variableNode: ParametricNode? { return nil }
+    
+    var targetString: String    { return "-node-" }
+    var baseHue: CGFloat { return 0.6 }
+    var origin = CGPoint(x: 0, y: 0)
+    var frame: CGRect   { return CGRect(origin: origin, size: image.size) }
+
+    func createImage(_ width: CGFloat = 0) {
+        if self.targetString == "" {
+            return
+        }
+        let targetString = AttributedString(string: self.targetString)
+        var imageSize = targetString.size()
+        let stringWidth = imageSize.width
+        if width > 0 {
+            imageSize.width = width
+        } else {
+            imageSize.width += 8
+        }
+        let offset = (imageSize.width - stringWidth) / 2
+        image = NSImage(size: imageSize)
+        image.lockFocus()
+        let path = NSBezierPath(roundedRect: CGRect(origin: CGPoint(x: 0, y: 0), size: imageSize), xRadius: imageSize.height / 2, yRadius: imageSize.height / 2)
+        var color = NSColor(calibratedHue: baseHue, saturation: 1.0, brightness: 1.0, alpha: 1.0)
+        color.setStroke()
+        color = NSColor(calibratedHue: baseHue, saturation: 0.2, brightness: 1.0, alpha: 1.0)
+        color.setFill()
+        path.lineWidth = 0.5
+        path.fill()
+        path.stroke()
+        targetString.draw(at: CGPoint(x: offset, y: 0))
+        image.unlockFocus()
+    }
+    
+    func itemAtIndex(_ index: Int) -> ParametricNode {
+        return self
+    }
+    
+    func insertItem(_ item: ParametricNode, atIndex index: Int) -> ParametricNode {
+        return self
+    }
+    
+    func removeItemAtIndex(_ index: Int) -> ParametricNode? {
+        return nil
+    }
+    
+    func removeItem(_ item: ParametricNode) -> ParametricNode? {
+        if item != self {
+            return self
+        }
+        return nil
+    }
+    
+    func indexOfItem(_ item: ParametricNode) -> Int? {
+        if item == self {
+            return 0
+        }
+        return nil
+    }
+    
+    func itemAtPoint(_ point: CGPoint) -> ParametricNode? {
+        return frame.contains(point) ? self : nil
+    }
 }
 
 class ParametricConstant: ParametricNode
 {
-    init(value: NSValue, context: ParametricContext) {
+    override var targetString: String { return "\(value)" }
+    
+    init(value: NSValue, context: ParametricContext?) {
         super.init(context: context)
         self.value = value
     }
     
     required init?(coder decoder: NSCoder) {
         super.init(coder: decoder)
-        if let value = decoder.decodeObjectForKey("value") as? NSValue {
+        if let value = decoder.decodeObject(forKey: "value") as? NSValue {
             self.value = value
         } else {
             return nil
         }
     }
     
-    override func encodeWithCoder(encoder: NSCoder) {
-        super.encodeWithCoder(encoder)
-        encoder.encodeObject(value, forKey: "value")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encode(with encoder: NSCoder) {
+        super.encode(with: encoder)
+        encoder.encode(value, forKey: "value")
     }
     
     override var description: String { return "\(value)" }
+
+    override func insertItem(_ item: ParametricNode, atIndex index: Int) -> ParametricNode {
+        if index == 0 {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: op.left, right: self, context: context)
+            }
+            return ParametricOperation(op: "?", left: item, right: self, context: context)
+        } else {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: self, right: op.right, context: context)
+            }
+            return ParametricOperation(op: "?", left: self, right: item, context: context)
+        }
+    }
 }
 
 class ParametricValue: ParametricNode
 {
     var target: Graphic
     var name: String
+    var type: InspectionType
     
     override var isVariable: Bool   { return true }
     
     override var value: NSValue {
         get {
-            if let v = target.valueForKey(name) as? CGFloat {
+            if let v = target.value(forKey: name) as? CGFloat {
                 return v
             }
             return CGFloat(0)
         }
         set {
-            if let val = target.valueForKey(name) as? NSValue where val != newValue {
+            if let val = target.value(forKey: name) as? NSValue where val != newValue {
                 //print("\(context.prefix)set \(self) = \(newValue)")
                 target.setValue(newValue, forKey: name)
             }
         }
     }
     
-    init(target: Graphic, name: String, context: ParametricContext) {
+    init(target: Graphic, name: String, type: InspectionType, context: ParametricContext?) {
         self.target = target
         self.name = name
+        self.type = type
         super.init(context: context)
     }
     
     required init?(coder decoder: NSCoder) {
-        if let target = decoder.decodeObjectForKey("target") as? Graphic, let name = decoder.decodeObjectForKey("name") as? String {
+        if let target = decoder.decodeObject(forKey: "target") as? Graphic, let name = decoder.decodeObject(forKey: "name") as? String {
             self.target = target
             self.name = name
+            self.type = InspectionType(rawValue: decoder.decodeInteger(forKey: "type")) ?? .float
         } else {
             return nil
         }
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(encoder: NSCoder) {
-        super.encodeWithCoder(encoder)
-        encoder.encodeObject(target, forKey: "target")
-        encoder.encodeObject(name, forKey: "name")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encode(with encoder: NSCoder) {
+        super.encode(with: encoder)
+        encoder.encode(target, forKey: "target")
+        encoder.encode(name, forKey: "name")
+        encoder.encode(type.rawValue, forKey: "type")
     }
     
     override var description: String { return "G\(target.identifier).\(name)" }
     
     override var variableNode: ParametricNode? { return self }
+    
+    override var targetString: String { return "\(target.parametricName).\(name)" }
+
+    override func insertItem(_ item: ParametricNode, atIndex index: Int) -> ParametricNode {
+        if index == 0 {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: op.left, right: self, context: context)
+            }
+            return ParametricOperation(op: "?", left: item, right: self, context: context)
+        } else {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: self, right: op.right, context: context)
+            }
+            return ParametricOperation(op: "?", left: self, right: item, context: context)
+        }
+    }
 }
 
 /// Parametric Variable - a named variable of type CGFloat or CGPoint
 
 class ParametricVariable: ParametricNode
 {
+    override var targetString: String { return "\(name)" }
+    
     var name: String
     override var value: NSValue {
         didSet {
             //print("\(context.prefix)\(self) set to \(value)")
-            context.resolve(self)
+            context?.resolve(self)
         }
     }
     var measurementType: MeasurementType
     override var isVariable: Bool { return true }
     
-    var transformer: NSValueTransformer { return measurementType == .Angle ? AngleTransformer() : DistanceTransformer() }
+    var transformer: ValueTransformer { return measurementType == .angle ? AngleTransformer() : DistanceTransformer() }
     var stringValue: String {
         get {
             if let sv = transformer.transformedValue(value) as? String {
@@ -160,10 +290,10 @@ class ParametricVariable: ParametricNode
     }
     
     required init?(coder decoder: NSCoder) {
-        if let name = decoder.decodeObjectForKey("name") as? String,
-          let value = decoder.decodeObjectForKey("value") as? NSValue {
+        if let name = decoder.decodeObject(forKey: "name") as? String,
+          let value = decoder.decodeObject(forKey: "value") as? NSValue {
             self.name = name
-            measurementType = decoder.decodeBoolForKey("isAngle") ? .Angle : .Distance
+            measurementType = decoder.decodeBool(forKey: "isAngle") ? .angle : .distance
             super.init(coder: decoder)
             self.value = value
         } else {
@@ -171,111 +301,122 @@ class ParametricVariable: ParametricNode
         }
     }
     
-    override func encodeWithCoder(encoder: NSCoder) {
-        super.encodeWithCoder(encoder)
-        encoder.encodeObject(name, forKey: "name")
-        encoder.encodeObject(value, forKey: "value")
-        encoder.encodeBool(measurementType == .Angle, forKey: "isAngle")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encode(with encoder: NSCoder) {
+        super.encode(with: encoder)
+        encoder.encode(name, forKey: "name")
+        encoder.encode(value, forKey: "value")
+        encoder.encode(measurementType == .angle, forKey: "isAngle")
     }
     
     override var description: String { return "\(name)" }
     
     override var variableNode: ParametricNode? { return self }
+
+    override func insertItem(_ item: ParametricNode, atIndex index: Int) -> ParametricNode {
+        if index == 0 {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: op.left, right: self, context: context)
+            }
+            return ParametricOperation(op: "?", left: item, right: self, context: context)
+        } else {
+            if let op = item as? ParametricOperation {
+                return ParametricOperation(op: op.op, left: self, right: op.right, context: context)
+            }
+            return ParametricOperation(op: "?", left: self, right: item, context: context)
+        }
+    }
 }
 
-class ParametricBinding: ParametricNode
+class ParametricBinding: ParametricOperation
 {
-    var left: ParametricNode
-    var right: ParametricNode
-    
     override var value: NSValue {
-        get { return right.value }
+        get { return right?.value ?? 0.0 }
         set {
-            right.value = newValue
-            left.value = newValue
+            right?.value = newValue
+            left?.value = newValue
         }
     }
     
-    init(left: ParametricNode, right: ParametricNode, context: ParametricContext) {
-        self.left = left
-        self.right = right
-        super.init(context: context)
+    init(left: ParametricNode, right: ParametricNode, context: ParametricContext?) {
+        super.init(op: "=", left: left, right: right, context: context)
     }
     
     required init?(coder decoder: NSCoder) {
-        if let left = decoder.decodeObjectForKey("left") as? ParametricNode, let right = decoder.decodeObjectForKey("right") as? ParametricNode {
-            self.left = left
-            self.right = right
-        } else {
-            return nil
-        }
         super.init(coder: decoder)
+        op = "="
     }
     
-    override func encodeWithCoder(encoder: NSCoder) {
-        super.encodeWithCoder(encoder)
-        encoder.encodeObject(left, forKey: "left")
-        encoder.encodeObject(right, forKey: "right")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encode(with encoder: NSCoder) {
+        super.encode(with: encoder)
+        encoder.encode(left, forKey: "left")
+        encoder.encode(right, forKey: "right")
     }
     
     func resolve() {
-        if !context.isException(left) {
+        if let left = left, let context = context where !context.isException(left) {
             //print("\(context.prefix)binding value \(left) = \(right) = \(right.value)")
             context.addException(left)
-            left.value = right.value
+            if let v = right?.value {
+                left.value = v
+            }
         }
     }
     
-    override var description: String { return "\(left) = \(right)" }
-    
-    override func dependsOn(node: ParametricNode) -> Bool {
-        return left.dependsOn(node) || right.dependsOn(node) || super.dependsOn(node)
-    }
-    
-    override var variableNode: ParametricNode? { return right.variableNode }
+    override var variableNode: ParametricNode? { return right?.variableNode }
 }
 
 class ParametricOperation: ParametricNode
 {
     var op: String
-    var left: ParametricNode
-    var right: ParametricNode
+    var left: ParametricNode?
+    var right: ParametricNode?
+    
+    var leftValue: NSValue  { return left?.value ?? 0 }
+    var rightValue: NSValue { return right?.value ?? 1 }
 
     override var value: NSValue {
         get {
             switch op {
             case "+":
-                return left.value + right.value
+                return leftValue + rightValue
             case "-":
-                return left.value - right.value
+                return leftValue - rightValue
             case "*":
-                return left.value * right.value
+                return leftValue * rightValue
             case "/":
-                return left.value / right.value
+                return leftValue / rightValue
             default:
-                return right.value
+                return rightValue
             }
         }
         set {
             //print("\(context.prefix)set \(self) = \(newValue)")
             switch op {
             case "+":
-                if left.isVariable {
-                    left.value = newValue - right.value
-                } else if right.isVariable {
-                    right.value = newValue - left.value
+                if let left = left where left.isVariable {
+                    left.value = newValue - rightValue
+                } else if let right = right where right.isVariable {
+                    right.value = newValue - leftValue
                 }
             case "-":
-                if left.isVariable {
-                    left.value = right.value + newValue
-                } else if right.isVariable {
-                    right.value = left.value - newValue
+                if let left = left where left.isVariable {
+                    left.value = rightValue + newValue
+                } else if let right = right where right.isVariable {
+                    right.value = leftValue - newValue
                 }
             case "*":
-                if left.isVariable {
-                    left.value = newValue / right.value
-                } else if right.isVariable {
-                    right.value = newValue / left.value
+                if let left = left where left.isVariable {
+                    left.value = newValue / rightValue
+                } else if let right = right where right.isVariable {
+                    right.value = newValue / leftValue
                 }
             default:
                 break
@@ -285,12 +426,14 @@ class ParametricOperation: ParametricNode
     
     override var isVariable: Bool {
         if op == "=" {
-            return right.isVariable
+            return right?.isVariable ?? false
         }
-        return left.isVariable || right.isVariable
+        return (left?.isVariable ?? false) || (right?.isVariable ?? false)
     }
     
-    init(op: String, left: ParametricNode, right: ParametricNode, context: ParametricContext) {
+    override var targetString: String { return op }
+    
+    init(op: String, left: ParametricNode?, right: ParametricNode?, context: ParametricContext?) {
         self.op = op
         self.left = left
         self.right = right
@@ -298,9 +441,9 @@ class ParametricOperation: ParametricNode
     }
     
     required init?(coder decoder: NSCoder) {
-        if let op = decoder.decodeObjectForKey("op") as? String,
-            let left = decoder.decodeObjectForKey("left") as? ParametricNode,
-            let right = decoder.decodeObjectForKey("right") as? ParametricNode {
+        if let op = decoder.decodeObject(forKey: "op") as? String,
+            let left = decoder.decodeObject(forKey: "left") as? ParametricNode,
+            let right = decoder.decodeObject(forKey: "right") as? ParametricNode {
                 self.op = op
                 self.left = left
                 self.right = right
@@ -310,20 +453,105 @@ class ParametricOperation: ParametricNode
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(encoder: NSCoder) {
-        super.encodeWithCoder(encoder)
-        encoder.encodeObject(op, forKey: "op")
-        encoder.encodeObject(left, forKey: "left")
-        encoder.encodeObject(right, forKey: "right")
+    required init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
+    }
+    
+    override func encode(with encoder: NSCoder) {
+        super.encode(with: encoder)
+        encoder.encode(op, forKey: "op")
+        encoder.encode(left, forKey: "left")
+        encoder.encode(right, forKey: "right")
     }
     
     override var description: String { return "\(left) \(op) \(right)" }
     
-    override func dependsOn(node: ParametricNode) -> Bool {
-        return left.dependsOn(node) || right.dependsOn(node) || super.dependsOn(node)
+    override func dependsOn(_ node: ParametricNode) -> Bool {
+        if let left = left where left.dependsOn(node) {
+            return true
+        } else if let right = right where right.dependsOn(node) {
+            return true
+        } else {
+            return super.dependsOn(node)
+        }
     }
     
-    override var variableNode: ParametricNode? { return left.variableNode ?? right.variableNode }
+    override var variableNode: ParametricNode? { return left?.variableNode ?? right?.variableNode }
+    
+    override var count: Int {
+        return (left?.count ?? 0) + 1 + (right?.count ?? 0)
+    }
+
+    override func itemAtIndex(_ index: Int) -> ParametricNode {
+        if let left = left where index < left.count {
+            return left.itemAtIndex(index)
+        }
+        let index = index - (left?.count ?? 0)
+        if index == 0 {
+            return self
+        }
+        return right?.itemAtIndex(index - 1) ?? self
+    }
+    
+    override func insertItem(_ item: ParametricNode, atIndex index: Int) -> ParametricNode {
+        if let left = left where index < left.count {
+            return ParametricOperation(op: op, left: left.insertItem(item, atIndex: index), right: right, context: context)
+        } else {
+            let index = index - (left?.count ?? 0)
+            if index == 0 {
+                if let op = item as? ParametricOperation {
+                    return ParametricOperation(op: op.op, left: left, right: right, context: context)
+                } else if left == nil {
+                    return ParametricOperation(op: op, left: item, right: right, context: context)
+                } else {
+                    let newOp = ParametricOperation(op: "?", left: left, right: item, context: context)
+                    return ParametricOperation(op: op, left: newOp, right: right, context: context)
+                }
+            } else if let right = right {
+                let newRight = right.insertItem(item, atIndex: index - 1)
+                return ParametricOperation(op: op, left: left, right: newRight, context: context)
+            } else {
+                return ParametricOperation(op: op, left: left, right: item, context: context)
+            }
+        }
+    }
+    
+    override func removeItemAtIndex(_ index: Int) -> ParametricNode? {
+        if let left = left where index < left.count {
+            return left.removeItemAtIndex(index)
+        } else {
+            let index = index - (left?.count ?? 0)
+            if index == 0 {
+                return ParametricOperation(op: "?", left: left, right: right, context: context)
+            } else {
+                return right?.removeItemAtIndex(index - 1)
+            }
+        }
+    }
+    
+    override func removeItem(_ item: ParametricNode) -> ParametricNode? {
+        if item == self {
+            return ParametricOperation(op: "?", left: left, right: right, context: context)
+        } else {
+            return ParametricOperation(op: op, left: left?.removeItem(item), right: right?.removeItem(item), context: context)
+        }
+    }
+    
+    override func itemAtPoint(_ point: CGPoint) -> ParametricNode? {
+        return super.itemAtPoint(point) ?? left?.itemAtPoint(point) ?? right?.itemAtPoint(point)
+    }
+    
+    override func indexOfItem(_ item: ParametricNode) -> Int? {
+        if item == self {
+            return left?.count ?? 0
+        } else if let index = left?.indexOfItem(item) {
+            return index
+        } else if let index = right?.indexOfItem(item) {
+            return (left?.count ?? 0) + 1 + index
+        } else {
+            return nil
+        }
+    }
 }
 
 private func +(a: NSValue, b: NSValue) -> NSValue {
@@ -365,7 +593,7 @@ private func /(a: NSValue, b: NSValue) -> NSValue {
 
 
 @objc protocol ParametricContextDelegate {
-    optional func parametricContextDidUpdate(parametricContext: ParametricContext)
+    @objc optional func parametricContextDidUpdate(_ parametricContext: ParametricContext)
 }
 
 struct ObservationInfo {
@@ -391,13 +619,13 @@ class ParametricContext: NSObject, NSCoding
     
     required init?(coder decoder: NSCoder) {
         super.init()
-        if let variables = decoder.decodeObjectForKey("variables") as? [ParametricVariable] {
+        if let variables = decoder.decodeObject(forKey: "variables") as? [ParametricVariable] {
             self.variables = variables
             for v in variables {
                 variablesByName[v.name] = v
             }
         }
-        if let parametrics = decoder.decodeObjectForKey("parametrics") as? [ParametricBinding] {
+        if let parametrics = decoder.decodeObject(forKey: "parametrics") as? [ParametricBinding] {
             self.parametrics = parametrics
             for p in parametrics {
                 if let left = p.left as? ParametricValue {
@@ -411,12 +639,12 @@ class ParametricContext: NSObject, NSCoding
         showParametrics()
     }
     
-    func encodeWithCoder(encoder: NSCoder) {
-        encoder.encodeObject(variables, forKey: "variables")
-        encoder.encodeObject(parametrics, forKey: "parametrics")
+    func encode(with encoder: NSCoder) {
+        encoder.encode(variables, forKey: "variables")
+        encoder.encode(parametrics, forKey: "parametrics")
     }
     
-    override func setValue(value: AnyObject?, forUndefinedKey key: String) {
+    override func setValue(_ value: AnyObject?, forUndefinedKey key: String) {
         if let value = value as? NSValue {
             if let v = variablesByName[key] {
                 v.value = value
@@ -424,28 +652,28 @@ class ParametricContext: NSObject, NSCoding
         }
     }
     
-    override func valueForUndefinedKey(key: String) -> AnyObject? {
+    override func value(forUndefinedKey key: String) -> AnyObject? {
         if let pv = variablesByName[key] {
             return pv.value
         }
         return nil
     }
     
-    func variableForKey(key: String) -> ParametricVariable? {
+    func variableForKey(_ key: String) -> ParametricVariable? {
         return variablesByName[key]
     }
     
-    func defineVariable(key: String, value: NSValue, type: MeasurementType) -> ParametricVariable {
+    func defineVariable(_ key: String, value: NSValue, type: MeasurementType) -> ParametricVariable {
         let pv = ParametricVariable(name: key, value: value, type: type, context: self)
         variables.append(pv)
         variablesByName[key] = pv
         return pv
     }
     
-    func startObserving(target: Graphic, property: String) {
+    func startObserving(_ target: Graphic, property: String) {
         print("\(self) registers for \(property) of G\(target.identifier)")
         observing.append(ObservationInfo(target: target, property: property))
-        target.addObserver(self, forKeyPath: property, options: NSKeyValueObservingOptions.New, context: nil)
+        target.addObserver(self, forKeyPath: property, options: NSKeyValueObservingOptions.new, context: nil)
     }
     
     func suspendObservation() {
@@ -468,19 +696,19 @@ class ParametricContext: NSObject, NSCoding
         //print("\(self) resumes observation")
         for info in observing {
             //print("  add observer G\(info.target.identifier).\(info.property)")
-            info.target.addObserver(self, forKeyPath: info.property, options: NSKeyValueObservingOptions.New, context: nil)
+            info.target.addObserver(self, forKeyPath: info.property, options: NSKeyValueObservingOptions.new, context: nil)
         }
         
         for p in parametrics {
-            if p.right.isVariable {             // reverse resolve to get new variables
-                p.right.value = p.left.value
+            if let right = p.right, let left = p.left where right.isVariable {             // reverse resolve to get new variables
+                right.value = left.value
             }
         }
     }
     
     /// resolve -- propagate any changes to variable values to the rest of the context
     
-    func resolve(depends: ParametricNode?) {
+    func resolve(_ depends: ParametricNode?) {
         let oldExceptions = exceptions
         let oldPrefix = prefix
         //print("\(prefix)resolving \(depends)")
@@ -510,8 +738,8 @@ class ParametricContext: NSObject, NSCoding
         }
     }
     
-    func assign(target: Graphic, property: String, expression: ParametricNode) {
-        let param = ParametricValue(target: target, name: property, context: self)
+    func assign(_ target: Graphic, property: String, expression: ParametricNode) {
+        let param = ParametricValue(target: target, name: property, type: target.inspectionTypeForKey(property), context: self)
         let assignment = ParametricBinding(left: param, right: expression, context: self)
         startObserving(target, property: property)
         parametrics = parametrics.filter {
@@ -524,7 +752,7 @@ class ParametricContext: NSObject, NSCoding
         showParametrics()
     }
     
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: AnyObject?, change: [NSKeyValueChangeKey : AnyObject]?, context: UnsafeMutablePointer<Void>?) {
         if let target = object as? Graphic, let keyPath = keyPath {
             if isException(target, key: keyPath) {
                 return
@@ -535,9 +763,9 @@ class ParametricContext: NSObject, NSCoding
             let oldExceptions = exceptions
             for p in parametrics {
                 if let pv = p.left as? ParametricValue where pv.target == target && pv.name == keyPath {
-                    if p.left.value != p.right.value {
-                        addException(p.left)
-                        p.right.value = p.left.value
+                    if let left = p.left, let right = p.right where left.value != right.value {
+                        addException(left)
+                        right.value = left.value
                     }
                 }
             }
@@ -555,21 +783,21 @@ class ParametricContext: NSObject, NSCoding
         //print("\(prefix)exceptions: \(exs)")
     }
     
-    func addException(node: ParametricNode) {
+    func addException(_ node: ParametricNode) {
         exceptions.append(node)
         showExceptions()
     }
     
-    func removeException(node: ParametricNode) {
+    func removeException(_ node: ParametricNode) {
         exceptions = exceptions.filter { $0 != node }
         showExceptions()
     }
     
-    func isException(node: ParametricNode) -> Bool {
+    func isException(_ node: ParametricNode) -> Bool {
         return exceptions.contains(node)
     }
     
-    func isException(graphic: Graphic, key: String) -> Bool {
+    func isException(_ graphic: Graphic, key: String) -> Bool {
         for ex in exceptions {
             if let pv = ex as? ParametricValue {
                 if pv.target == graphic && pv.name == key {
@@ -584,18 +812,18 @@ class ParametricContext: NSObject, NSCoding
 // MARK: PARSING
 
 enum ParseToken {
-    case Number(CGFloat)
-    case ID(String)
-    case Operator(String)
-    case Error(String)
-    case EOF
+    case number(CGFloat)
+    case id(String)
+    case `operator`(String)
+    case error(String)
+    case eof
 }
 
-enum ParseError: ErrorType {
-    case BadExpression
-    case BadCharacter(Character)
-    case BadNumber
-    case BadFraction
+enum ParseError: ErrorProtocol {
+    case badExpression
+    case badCharacter(Character)
+    case badNumber
+    case badFraction
 }
 
 class ParametricParser
@@ -626,7 +854,7 @@ class ParametricParser
         location = content.startIndex
         self.context = context
         self.type = type
-        lastToken = .EOF
+        lastToken = .eof
         expression = ParametricConstant(value: 0.0, context: context)
         if let t = try? getToken() {
             lastToken = t
@@ -641,7 +869,7 @@ class ParametricParser
     
     private func nextch() {
         if lastch != EOF && location != content.endIndex {
-            location = location.successor()
+            location = content.index(after: location)
         }
     }
     
@@ -651,7 +879,7 @@ class ParametricParser
         }
     }
     
-    private func isUpperCase(c: Character) -> Bool {
+    private func isUpperCase(_ c: Character) -> Bool {
         switch c {
         case "A"..."Z":
             return true
@@ -660,7 +888,7 @@ class ParametricParser
         }
     }
     
-    private func isLowerCase(c: Character) -> Bool {
+    private func isLowerCase(_ c: Character) -> Bool {
         switch c {
         case "a"..."z":
             return true
@@ -669,7 +897,7 @@ class ParametricParser
         }
     }
     
-    private func isDigit(c: Character) -> Bool {
+    private func isDigit(_ c: Character) -> Bool {
         switch c {
         case "0"..."9":
             return true
@@ -678,8 +906,8 @@ class ParametricParser
         }
     }
     
-    private func isAlpha(c: Character) -> Bool { return isUpperCase(c) || isLowerCase(c) }
-    private func isAlphaNumeric(c: Character) -> Bool { return isAlpha(c) || isDigit(c) }
+    private func isAlpha(_ c: Character) -> Bool { return isUpperCase(c) || isLowerCase(c) }
+    private func isAlphaNumeric(_ c: Character) -> Bool { return isAlpha(c) || isDigit(c) }
     
     private func getToken() throws -> ParseToken {
         skipSpace()
@@ -690,7 +918,7 @@ class ParametricParser
                 s.append(lastch)
                 nextch()
             }
-            return .ID(s)
+            return .id(s)
         case "0"..."9":
             var s = ""
             while isDigit(lastch) {
@@ -718,19 +946,19 @@ class ParametricParser
                 }
             }
             if let v = Double(s) {
-                return .Number(CGFloat(v))
+                return .number(CGFloat(v))
             }
-            throw ParseError.BadNumber
+            throw ParseError.badNumber
         case "+", "-", "*", "/", "(", ")", "\"", "'", "{", "}", ",":
             let op = String(lastch)
             nextch()
-            return .Operator(op)
+            return .operator(op)
         case EOF:
-            return .EOF
+            return .eof
         default:
             let char = lastch
             nextch()
-            throw ParseError.BadCharacter(char)
+            throw ParseError.badCharacter(char)
         }
     }
     
@@ -740,11 +968,11 @@ class ParametricParser
     
     private var defaultUnitMultiplier: CGFloat {
         switch measurementUnits {
-        case .Feet_dec, .Inches_dec, .Feet_frac, .Inches_frac:      // these default to inches
+        case .feet_dec, .inches_dec, .feet_frac, .inches_frac:      // these default to inches
             return 100.0
-        case .Millimeters:
+        case .millimeters:
             return 100 / 25.4                    // default to millimeters
-        case .Meters:
+        case .meters:
             return 1000 * 100 / 25.4             // default to meters
         }
     }
@@ -755,7 +983,7 @@ class ParametricParser
     
     private func unary() throws -> ParametricNode {
         switch lastToken {
-        case .Operator("-"):
+        case .operator("-"):
             try nextToken()
             switch try unary() {
             case let p as ParametricConstant:
@@ -764,7 +992,7 @@ class ParametricParser
                 let zero = ParametricConstant(value: 0, context: context)
                 return ParametricOperation(op: "-", left: zero, right: p, context: context)
             }
-        case let .ID(s):
+        case let .id(s):
             try nextToken()
             if let p = context.variableForKey(s) {
                 return p
@@ -772,77 +1000,81 @@ class ParametricParser
                 newDefinitions.append(s)
                 return context.defineVariable(s, value: 0, type: type)
             }
-        case let .Number(n):
+        case let .number(n):
             var n = n
             let p = ParametricConstant(value: n, context: context)
             try nextToken()
-            if case .Number(let numerator) = lastToken {
+            if case .number(let numerator) = lastToken {
                 try nextToken()
-                if case .Operator("/") = lastToken {
+                if case .operator("/") = lastToken {
                     try nextToken()
-                    if case .Number(let denominator) = lastToken {
+                    if case .number(let denominator) = lastToken {
                         try nextToken()
                         n += numerator / denominator
                     } else {
-                        throw ParseError.BadFraction
+                        throw ParseError.badFraction
                     }
                 } else {
-                    throw ParseError.BadFraction
+                    throw ParseError.badFraction
                 }
             }
             
             switch lastToken {
-            case .ID("mm"):
+            case .id("mm"):
                 p.value = n * (100 / 25.4)
                 try nextToken()
-            case .ID("m"):
+            case .id("m"):
                 p.value = n * 1000 * (100 / 25.4)
                 try nextToken()
-            case .ID("in"), .Operator("\""):
+            case .id("in"), .operator("\""):
                 p.value = n * 100
                 try nextToken()
-            case .ID("ft"), .Operator("'"):
+            case .id("ft"), .operator("'"):
                 p.value = n * 1200
                 try nextToken()
+                if case .number(_) = lastToken {
+                    let u = try unary()
+                    p.value = p.value + u.value
+                }
             default:
-                if type == .Angle {
+                if type == .angle {
                     p.value = n * PI / 180                       // convert from degrees
                 } else {
                     p.value = n * defaultUnitMultiplier
                 }
             }
             return p
-        case .Operator("{"):
+        case .operator("{"):
             try nextToken()
             let x = try anyOperation()
-            if case .Operator(",") = lastToken {
+            if case .operator(",") = lastToken {
                 try nextToken()
             } else {
-                throw ParseError.BadExpression
+                throw ParseError.badExpression
             }
             let y = try anyOperation()
-            if case .Operator("}") = lastToken {
+            if case .operator("}") = lastToken {
                 try nextToken()
                 if let xv = x.value as? CGFloat, yv = y.value as? CGFloat {
                     let pvalue = CGPoint(x: xv, y: yv)
                     return ParametricConstant(value: NSValue(point: pvalue), context: context)
                 }
             }
-            throw ParseError.BadExpression
+            throw ParseError.badExpression
         default:
-            throw ParseError.BadExpression
+            throw ParseError.badExpression
         }
     }
     
     private func timesOperation() throws -> ParametricNode {
         let p = try unary()
         switch lastToken {
-        case .Operator("*"):
+        case .operator("*"):
             try nextToken()
             let q = try timesOperation()
             let qq = ParametricOperation(op: "/", left: q, right: defaultUnitMultiplierNode, context: context)
             return ParametricOperation(op: "*", left: p, right: qq, context: context)
-        case .Operator("/"):
+        case .operator("/"):
             try nextToken()
             let q = try timesOperation()
             let qq = ParametricOperation(op: "/", left: q, right: defaultUnitMultiplierNode, context: context)
@@ -855,11 +1087,11 @@ class ParametricParser
     private func addOperation() throws -> ParametricNode {
         let p = try timesOperation()
         switch lastToken {
-        case .Operator("+"):
+        case .operator("+"):
             try nextToken()
             let q = try addOperation()
             return ParametricOperation(op: "+", left: p, right: q, context: context)
-        case .Operator("-"):
+        case .operator("-"):
             try nextToken()
             let q = try addOperation()
             return ParametricOperation(op: "-", left: p, right: q, context: context)

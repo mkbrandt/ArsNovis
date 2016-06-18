@@ -12,18 +12,17 @@ class RectGraphic: GroupGraphic
 {
     var sides: [LineGraphic]    { return contents as! [LineGraphic] }
     
-    var width: CGFloat {
-        get { return size.width }
-        set { size = CGSize(width: newValue, height: size.height) }
-    }
+    override var inspectionName: String { return "Rectangle" }
     
-    var height: CGFloat {
-        get { return size.height }
-        set { size = CGSize(width: size.width, height: newValue) }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            //InspectionInfo(label: "Width", key: "width", type: .Distance),
+            //InspectionInfo(label: "Height", key: "height", type: .Distance)
+        ]
     }
     
     override var inspectionKeys: [String] {
-        return ["x", "y", "width", "height"]
+        return ["x", "y"]//, "width", "height"]
     }
     
     init(origin: CGPoint, size: CGSize) {
@@ -42,8 +41,8 @@ class RectGraphic: GroupGraphic
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
     }
 }
 
@@ -57,7 +56,19 @@ class ElipseGraphic: Graphic
     var topRight: CGPoint           { return origin + CGPoint(x: size.width, y: size.height) }
     var bottomRight: CGPoint        { return origin + CGPoint(x: size.width, y: 0) }
     
+    var width: CGFloat { return bounds.width }
+    var height: CGFloat { return bounds.height }
+    
     override var points: [CGPoint]  { return [origin, topLeft, topRight, bottomRight] }
+    
+    override var inspectionName: String { return "Elipse" }
+    
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Width", key: "width", type: .distance),
+            InspectionInfo(label: "Height", key: "height", type: .distance)
+        ]
+    }
     
     init(origin: CGPoint, size: CGSize) {
         self.size = size
@@ -69,16 +80,16 @@ class ElipseGraphic: Graphic
     }
     
     required init?(coder decoder: NSCoder) {
-        size = decoder.decodeSizeForKey("size")
+        size = decoder.decodeSize(forKey: "size")
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeSize(size, forKey: "size")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(size, forKey: "size")
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             let r = rectContainingPoints([point, topRight])
@@ -103,21 +114,21 @@ class ElipseGraphic: Graphic
     
     override func recache()
     {
-        cachedPath = NSBezierPath(ovalInRect: CGRect(origin: origin, size: size))
+        cachedPath = NSBezierPath(ovalIn: CGRect(origin: origin, size: size))
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         let cp = points.reduce(origin, combine: { point.distanceToPoint($1) < point.distanceToPoint($0) ? $1 : $0 })
         let cp2 = super.closestPointToPoint(point)
         
         return cp.distanceToPoint(point) < cp2.distanceToPoint(point) ? cp : cp2
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         return simpleIntersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         if let bp = BezierGraphic(path: path) {
             return bp.snapCursor(location)
         }
@@ -129,23 +140,23 @@ class RectTool: GraphicTool
 {
     var startPoint = CGPoint(x: 0, y: 0)
     
-    func construct(origin origin: CGPoint, size: CGSize) -> Graphic {
+    func construct(origin: CGPoint, size: CGSize) -> Graphic {
         return RectGraphic(origin: origin, size: size)
     }
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Drawing Rectangles")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         startPoint = location
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         var location = location
         if view.shiftKeyDown {
             location = constrainTo45Degrees(location, relativeToPoint: startPoint)
@@ -161,24 +172,24 @@ class CenterRectTool: GraphicTool
 {
     var startPoint = CGPoint(x: 0, y: 0)
     
-    func construct(origin origin: CGPoint, size: CGSize) -> Graphic {
+    func construct(origin: CGPoint, size: CGSize) -> Graphic {
         return RectGraphic(origin: origin, size: size)
     }
 
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Drawing Rectangles from Center")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         startPoint = location
         view.construction = construct(origin: location, size: NSSize(width: 0, height: 0))
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         var location = location
         if view.shiftKeyDown {
             location = constrainTo45Degrees(location, relativeToPoint: startPoint)
@@ -192,11 +203,11 @@ class CenterRectTool: GraphicTool
 
 class ElipseTool: RectTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Drawing Elipses by corner")
     }
     
-    override func construct(origin origin: CGPoint, size: CGSize) -> Graphic {
+    override func construct(origin: CGPoint, size: CGSize) -> Graphic {
         return ElipseGraphic(origin: origin, size: size)
     }
 }
@@ -204,11 +215,11 @@ class ElipseTool: RectTool
 
 class CenterElipseTool: CenterRectTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Drawing Elipse from Center")
     }
     
-    override func construct(origin origin: CGPoint, size: CGSize) -> Graphic {
+    override func construct(origin: CGPoint, size: CGSize) -> Graphic {
         return ElipseGraphic(origin: origin, size: size)
     }
 }

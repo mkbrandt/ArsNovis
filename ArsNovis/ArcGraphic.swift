@@ -9,7 +9,7 @@
 import Cocoa
 
 enum ArcInspectionMode {
-    case ThreePoint, CenterRadius
+    case threePoint, centerRadius
 }
 
 class ArcGraphic: Graphic
@@ -54,6 +54,17 @@ class ArcGraphic: Graphic
         }
     }
     
+    override var inspectionName: String { return "Arc" }
+    
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Radius", key: "radius", type: .distance),
+            InspectionInfo(label: "Starting Angle", key: "startAngle", type: .angle),
+            InspectionInfo(label: "Ending Angle", key: "endAngle", type: .angle),
+            InspectionInfo(label: "Clockwise", key: "clockwise", type: .bool)
+        ]
+    }
+    
     override var inspectionKeys: [String] {
         return ["x", "y", "radius", "startAngle", "endAngle"]
     }
@@ -62,12 +73,12 @@ class ArcGraphic: Graphic
         return "radius"
     }
     
-    override func typeForKey(key: String) -> MeasurementType {
+    override func typeForKey(_ key: String) -> MeasurementType {
         switch key {
         case "startAngle", "endAngle":
-            return .Angle
+            return .angle
         default:
-            return .Distance
+            return .distance
         }
     }
     
@@ -88,22 +99,22 @@ class ArcGraphic: Graphic
     }
     
     required init?(coder decoder: NSCoder) {
-        radius = CGFloat(decoder.decodeDoubleForKey("radius"))
-        startAngle = CGFloat(decoder.decodeDoubleForKey("startAngle"))
-        endAngle = CGFloat(decoder.decodeDoubleForKey("endAngle"))
-        clockwise = decoder.decodeBoolForKey("clockwise")
+        radius = CGFloat(decoder.decodeDouble(forKey: "radius"))
+        startAngle = CGFloat(decoder.decodeDouble(forKey: "startAngle"))
+        endAngle = CGFloat(decoder.decodeDouble(forKey: "endAngle"))
+        clockwise = decoder.decodeBool(forKey: "clockwise")
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeDouble(Double(startAngle), forKey: "startAngle")
-        coder.encodeDouble(Double(endAngle), forKey: "endAngle")
-        coder.encodeDouble(Double(radius), forKey: "radius")
-        coder.encodeBool(clockwise, forKey: "clockwise")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(Double(startAngle), forKey: "startAngle")
+        coder.encode(Double(endAngle), forKey: "endAngle")
+        coder.encode(Double(radius), forKey: "radius")
+        coder.encode(clockwise, forKey: "clockwise")
     }
     
-    func pointOnArc(point: CGPoint) -> Bool {
+    func pointOnArc(_ point: CGPoint) -> Bool {
         if point.distanceToPoint(origin) > radius + 0.001 {
             //print("point \(point) too far: distance = \(point.distanceToPoint(center)), radius = \(radius)")
             return false
@@ -124,7 +135,7 @@ class ArcGraphic: Graphic
         }
     }
     
-    func intersectionsWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func intersectionsWithLine(_ line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         var points: [CGPoint]
         let p = line.closestPointToPoint(origin, extended: true)
         let dist = p.distanceToPoint(origin)
@@ -151,7 +162,7 @@ class ArcGraphic: Graphic
         return intersections
     }
     
-    func intersectionsWithArc(arc: ArcGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func intersectionsWithArc(_ arc: ArcGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         let d = origin.distanceToPoint(arc.origin)
         if d == 0 {
             return []
@@ -169,7 +180,10 @@ class ArcGraphic: Graphic
             v.length = radius
             intersections = [origin + v]
         } else {
-            let a = (radius * radius - arc.radius * arc.radius + d * d) / (d * 2)
+            let radiusSquared = self.radius * self.radius
+            let arcRadiusSquared = arc.radius * arc.radius
+            let dSquared = d * d
+            let a = (radiusSquared - arcRadiusSquared + dSquared) / (d * 2)
             let h = sqrt(radius * radius - a * a)
             var va = arc.origin - origin
             va.length = a
@@ -183,7 +197,7 @@ class ArcGraphic: Graphic
         return intersections
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let arc = g as? ArcGraphic {
             return intersectionsWithArc(arc, extendSelf: extendSelf, extendOther: extendOther)
         } else if let line = g as? LineGraphic {
@@ -194,7 +208,7 @@ class ArcGraphic: Graphic
         return []
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int)
+    override func setPoint(_ point: CGPoint, atIndex index: Int)
     {
         switch index {
         case 0:
@@ -210,11 +224,11 @@ class ArcGraphic: Graphic
         }
     }
     
-    func intersectsWithLine(line: LineGraphic) -> Bool {
+    func intersectsWithLine(_ line: LineGraphic) -> Bool {
         return intersectionsWithLine(line, extendSelf: false, extendOther: false).count > 0
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
         if rect.contains(origin) || rect.contains(endPoint) {
             return true
         }
@@ -227,24 +241,24 @@ class ArcGraphic: Graphic
         return intersectsWithLine(top) || intersectsWithLine(left) || intersectsWithLine(right) || intersectsWithLine(bottom)
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         if origin.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: origin, type: .Center)
+            return SnapResult(location: origin, type: .center)
         }
         if startPoint.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: startPoint, type: .EndPoint)
+            return SnapResult(location: startPoint, type: .endPoint)
         }
         if endPoint.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: endPoint, type: .EndPoint)
+            return SnapResult(location: endPoint, type: .endPoint)
         }
         let cp = closestPointToPoint(location)
         if cp.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: cp, type: .On)
+            return SnapResult(location: cp, type: .on)
         }
         return nil
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool = false) -> CGPoint {
         let a = (point - origin).angle
         let p = CGPoint(length: radius, angle: a) + origin
         
@@ -261,7 +275,7 @@ class ArcGraphic: Graphic
         return endPoint
     }
     
-    override func distanceToPoint(point: CGPoint, extended: Bool) -> CGFloat {
+    override func distanceToPoint(_ point: CGPoint, extended: Bool) -> CGFloat {
         let d = super.distanceToPoint(point, extended: extended)
         return d
     }
@@ -271,19 +285,19 @@ class ArcGraphic: Graphic
         
         if let cachedPath = cachedPath {
             print("origin = \(origin), radius = \(radius), startAngle = \(startAngle), endAngle = \(endAngle), clockwise = \(clockwise)")
-            cachedPath.appendBezierPathWithArcWithCenter(origin, radius: radius, startAngle: startAngle * 180 / PI, endAngle: endAngle * 180 / PI, clockwise: clockwise)
+            cachedPath.appendArc(withCenter: origin, radius: radius, startAngle: startAngle * 180 / PI, endAngle: endAngle * 180 / PI, clockwise: clockwise)
         }
     }
     
-    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+    override func divideAtPoint(_ point: CGPoint) -> [Graphic] {
         let pointVector = point - origin
         let arc1 = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: pointVector.angle, clockwise: clockwise)
         let arc2 = ArcGraphic(origin: origin, radius: radius, startAngle: pointVector.angle, endAngle: endAngle, clockwise: clockwise)
         return [arc1, arc2]
     }
     
-    override func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
-        let intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true).sort {
+    override func extendToIntersectionWith(_ g: Graphic, closeToPoint: CGPoint) -> Graphic {
+        let intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true).sorted {
             $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint)
         }
         if intersections.count > 0 {
@@ -299,9 +313,9 @@ class ArcGraphic: Graphic
         return self
     }
     
-    override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
+    override func addReshapeSnapConstructionsAtPoint(_ point: CGPoint, toView: DrawingView) {
         let circle = ElipseGraphic(origin: origin - CGPoint(x: radius, y: radius), size: CGSize(width: radius * 2, height: radius * 2))
-        circle.lineColor = NSColor.blueColor().colorWithAlphaComponent(0.5)
+        circle.lineColor = NSColor.blue().withAlphaComponent(0.5)
         circle.lineWidth = 0.0
         circle.ref = [self]
         toView.addSnapConstructions([circle])
@@ -314,7 +328,7 @@ class Arc3PtTool: GraphicTool
     var startPoint = CGPoint()
     var endPoint = CGPoint()
     
-    func arcFromStartPoint(startPoint: CGPoint, endPoint: CGPoint, midPoint: CGPoint) -> Graphic {
+    func arcFromStartPoint(_ startPoint: CGPoint, endPoint: CGPoint, midPoint: CGPoint) -> Graphic {
         let mp1 = (startPoint + midPoint) / 2
         let mp2 = (endPoint + midPoint) / 2
         let ang1 = (midPoint - startPoint).angle + PI / 2
@@ -334,15 +348,15 @@ class Arc3PtTool: GraphicTool
     }
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         state = 0
         view.setDrawingHint("3 Point Arc: Select start point")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -356,7 +370,7 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -370,7 +384,7 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         
         switch state {
@@ -384,7 +398,7 @@ class Arc3PtTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -411,15 +425,15 @@ class ArcCenterTool: GraphicTool
     var clockwise = false
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         state = 0
         view.setDrawingHint("Arc from center: Drag radius to start point")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -430,7 +444,7 @@ class ArcCenterTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -451,7 +465,7 @@ class ArcCenterTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:
@@ -464,7 +478,7 @@ class ArcCenterTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         switch state {
         case 0:

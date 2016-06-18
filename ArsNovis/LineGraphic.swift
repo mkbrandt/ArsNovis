@@ -12,15 +12,15 @@ class LineGraphic: Graphic
 {
     var endPoint: CGPoint {
         willSet {
-            willChangeValueForKey("vector")
-            willChangeValueForKey("length")
-            willChangeValueForKey("angle")
+            willChangeValue(forKey: "vector")
+            willChangeValue(forKey: "length")
+            willChangeValue(forKey: "angle")
         }
         didSet {
             cachedPath = nil
-            didChangeValueForKey("vector")
-            didChangeValueForKey("length")
-            didChangeValueForKey("angle")
+            didChangeValue(forKey: "vector")
+            didChangeValue(forKey: "length")
+            didChangeValue(forKey: "angle")
         }
     }
     
@@ -61,16 +61,16 @@ class LineGraphic: Graphic
     }
     
     required init?(coder decoder: NSCoder) {
-        endPoint = decoder.decodePointForKey("endPoint")
+        endPoint = decoder.decodePoint(forKey: "endPoint")
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodePoint(endPoint, forKey: "endPoint")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(endPoint, forKey: "endPoint")
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             origin = point
@@ -84,27 +84,27 @@ class LineGraphic: Graphic
     override func recache() {
         cachedPath = NSBezierPath()
         if let cachedPath = cachedPath {
-            cachedPath.moveToPoint(origin)
-            cachedPath.lineToPoint(origin + vector)
+            cachedPath.move(to: origin)
+            cachedPath.line(to: origin + vector)
         }
     }
     
     override var description: String { return "LineGraphic @ \(origin),\(endPoint)"}
     
-    func pointOnLine(point: CGPoint) -> Bool {
+    func pointOnLine(_ point: CGPoint) -> Bool {
         return distanceToPoint(point) < IOTA 
     }
     
-    func isParallelWith(line: LineGraphic) -> Bool {
+    func isParallelWith(_ line: LineGraphic) -> Bool {
         return abs(line.angle - angle) < 0.00001
             || abs(line.angle + angle) < 0.00001
     }
     
-    func isColinearWith(line: LineGraphic) -> Bool {
+    func isColinearWith(_ line: LineGraphic) -> Bool {
         return isParallelWith(line) && line.distanceToPoint(origin, extended: true) < 0.00001
     }
     
-    func intersectionWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
+    func intersectionWithLine(_ line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
         if isParallelWith(line) {
             return nil
         }
@@ -127,7 +127,7 @@ class LineGraphic: Graphic
         return p + t * r
     }
     
-    override func intersectsWithGraphic(g: Graphic) -> Bool {
+    override func intersectsWithGraphic(_ g: Graphic) -> Bool {
         if let g = g as? LineGraphic {
             return intersectionWithLine(g, extendSelf: false, extendOther: false) != nil
         } else {
@@ -135,7 +135,7 @@ class LineGraphic: Graphic
         }
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let g = g as? LineGraphic {
             if let p = intersectionWithLine(g, extendSelf: extendSelf, extendOther: extendOther) {
                 return [p]
@@ -146,11 +146,11 @@ class LineGraphic: Graphic
         return []
     }
     
-    func intersectionWithLine(g: LineGraphic) -> CGPoint? {
+    func intersectionWithLine(_ g: LineGraphic) -> CGPoint? {
         return intersectionWithLine(g, extendSelf: false, extendOther: false)
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
         if rect.contains(origin) || rect.contains(endPoint)
         {
             return true
@@ -164,21 +164,21 @@ class LineGraphic: Graphic
         return intersectionWithLine(top) != nil || intersectionWithLine(left) != nil || intersectionWithLine(right) != nil || intersectionWithLine(bottom) != nil
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         if let snap = super.snapCursor(location) {
             return snap
         }
         if center.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: center, type: .Center)
+            return SnapResult(location: center, type: .center)
         }
         let p = closestPointToPoint(location)
         if p.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: p, type: .On)
+            return SnapResult(location: p, type: .on)
         }
         return nil
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool = false) -> CGPoint {
         let v2 = point - origin;
         
         let len = dotProduct(vector, v2) / vector.length
@@ -203,21 +203,21 @@ class LineGraphic: Graphic
         return origin + v;
     }
     
-    override func distanceToPoint(p: CGPoint, extended: Bool = false) -> CGFloat {
+    override func distanceToPoint(_ p: CGPoint, extended: Bool = false) -> CGFloat {
         let v = closestPointToPoint(p, extended: extended)
         
         return (p - v).length
     }
     
-    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+    override func divideAtPoint(_ point: CGPoint) -> [Graphic] {
         let lines = [LineGraphic(origin: origin, endPoint: point), LineGraphic(origin: point, endPoint: endPoint)]
         
         return lines
     }
     
-    override func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+    override func extendToIntersectionWith(_ g: Graphic, closeToPoint: CGPoint) -> Graphic {
         var intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true)
-        intersections = intersections.sort { $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint) }
+        intersections = intersections.sorted { $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint) }
         if intersections.count > 0 {
             let intersection = intersections[0]
             if intersection.distanceToPoint(origin) < intersection.distanceToPoint(endPoint) {
@@ -229,16 +229,35 @@ class LineGraphic: Graphic
         return self
     }
     
-    func insetBy(distance: CGFloat) -> LineGraphic {
+    func insetBy(_ distance: CGFloat) -> LineGraphic {
         let insetVector = CGPoint(length: distance, angle: angle)
         return LineGraphic(origin: origin + insetVector, vector: vector - insetVector)
     }
     
-    override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView view: DrawingView) {
+    override func addReshapeSnapConstructionsAtPoint(_ point: CGPoint, toView view: DrawingView) {
         let line = ConstructionLine(origin: center, vector: CGPoint(length: 1, angle: vector.angle), reference: [self])
         view.addSnapConstructions([line])
     }
     
+    override var parametricName: String { return "Line_\(identifier)" }
+    override var parametricInfo: [InspectionInfo] {
+        return [
+            InspectionInfo(label: "origin", key: "origin", type: .point),
+            InspectionInfo(label: "endPoint", key: "endPoint", type: .point),
+            InspectionInfo(label: "length", key: "length", type: .distance),
+            InspectionInfo(label: "angle", key: "angle", type: .angle),
+        ]
+    }
+    
+    override var inspectionName: String { return "Line" }
+    
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Length", key: "length", type: .distance),
+            InspectionInfo(label: "Angle", key: "angle", type: .angle)
+        ]
+    }
+
     override var inspectionKeys: [String] {
         var keys = super.inspectionKeys
         
@@ -250,9 +269,9 @@ class LineGraphic: Graphic
         return "length"
     }
     
-    override func typeForKey(key: String) -> MeasurementType {
+    override func typeForKey(_ key: String) -> MeasurementType {
         if key == "angle" {
-            return .Angle
+            return .angle
         }
         return super.typeForKey(key)
     }
@@ -274,14 +293,14 @@ class ConstructionLine: LineGraphic
     override var isActive: Bool {
         didSet {
             if isActive {
-                lineColor = NSColor.blueColor().colorWithAlphaComponent(0.5)
+                lineColor = NSColor.blue().withAlphaComponent(0.5)
             } else {
-                lineColor = NSColor.clearColor()
+                lineColor = NSColor.clear()
             }
         }
     }
     
-    var snapOverride: SnapType = SnapType.Align
+    var snapOverride: SnapType = SnapType.align
     
     convenience init(origin: CGPoint, endPoint: CGPoint, reference: [Graphic]) {
         self.init(origin: origin, endPoint: endPoint)
@@ -297,7 +316,7 @@ class ConstructionLine: LineGraphic
         isActive = false
     }
 
-    override func intersectionWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
+    override func intersectionWithLine(_ line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> CGPoint? {
         if let line = line as? ConstructionLine {
             if line.origin == origin {
                 return nil
@@ -308,11 +327,11 @@ class ConstructionLine: LineGraphic
         return super.intersectionWithLine(line, extendSelf: true, extendOther: extendOther)
     }
 
-    override func distanceToPoint(p: CGPoint, extended: Bool = true) -> CGFloat {
+    override func distanceToPoint(_ p: CGPoint, extended: Bool = true) -> CGFloat {
         return super.distanceToPoint(p, extended: extended)
     }
 
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         length = 1
         super.angle = constrainedAngle
         let p = closestPointToPoint(location, extended: true)
@@ -326,32 +345,32 @@ class ConstructionLine: LineGraphic
 
 class LineTool: GraphicTool
 {
-    func snapPoint(p1: CGPoint, relativeToPoint p2: CGPoint) -> SnapResult? {
+    func snapPoint(_ p1: CGPoint, relativeToPoint p2: CGPoint) -> SnapResult? {
         let offset = p1 - p2
         if abs(offset.y) < SnapRadius {
-            return SnapResult(location: CGPoint(x: p1.x, y: p2.y), type: .Horizontal)
+            return SnapResult(location: CGPoint(x: p1.x, y: p2.y), type: .horizontal)
         }
         if abs(offset.x) < SnapRadius {
-            return SnapResult(location: CGPoint(x: p2.x, y: p1.y), type: .Vertical)
+            return SnapResult(location: CGPoint(x: p2.x, y: p1.y), type: .vertical)
         }
         return nil
     }
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Drawing Lines")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         let line = LineGraphic(origin: location, vector: CGPoint(x: 0, y: 0))
         view.construction = line
         view.addSnapConstructionsForPoint(location, reference: [line], includeAngles: true)
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         if let lg = view.construction as? LineGraphic {
             var location = location
             view.redrawConstruction()
@@ -367,7 +386,7 @@ class LineTool: GraphicTool
         }
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         if let line = view.construction as? LineGraphic {
             view.removeSnapConstructionsForReference(line)
             view.addSnapConstructionsForPoint(line.origin, reference: [line])

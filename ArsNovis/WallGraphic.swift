@@ -50,7 +50,7 @@ class WallOpening: LineGraphic
     override var description: String { return "Opening @ \(origin), \(endPoint)" }
     
     required init?(coder decoder: NSCoder) {
-        attachedWall = decoder.decodeObjectForKey("attached") as? WallGraphic
+        attachedWall = decoder.decodeObject(forKey: "attached") as? WallGraphic
         super.init(coder: decoder)
     }
     
@@ -66,10 +66,10 @@ class WallOpening: LineGraphic
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
         if let wall = attachedWall {
-            coder.encodeObject(wall, forKey: "attached")
+            coder.encode(wall, forKey: "attached")
         }
     }
     
@@ -85,8 +85,8 @@ class WallOpening: LineGraphic
         alignToWall()
         cachedPath = NSBezierPath()
         for line in ends {
-            cachedPath?.moveToPoint(line.origin)
-            cachedPath?.lineToPoint(line.endPoint)
+            cachedPath?.move(to: line.origin)
+            cachedPath?.line(to: line.endPoint)
         }
     }
     
@@ -105,7 +105,7 @@ class WallOpening: LineGraphic
         }
     }
     
-    override func drawInView(view: DrawingView) {
+    override func drawInView(_ view: DrawingView) {
         if attachedWall == nil {
             // see if we can attach to a wall
             for g in view.displayList {
@@ -123,14 +123,14 @@ class WallOpening: LineGraphic
 }
 
 enum IntersectionType {
-    case Corner, ThisTeesInto, OtherTeesInto, Crossing
+    case corner, thisTeesInto, otherTeesInto, crossing
 }
 
 struct IntersectionInfo {
     var otherWall: WallGraphic
     var points: [CGPoint]
     
-    func containsPoint(point: CGPoint) -> Bool {
+    func containsPoint(_ point: CGPoint) -> Bool {
         return rectContainingPoints(points).insetBy(dx: -0.00001, dy: -0.00001).contains(point)
     }
 }
@@ -163,6 +163,13 @@ class WallGraphic: LineGraphic
         return extendedLines
     }
     
+    override var inspectionName: String     { return "Wall" }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Depth", key: "width", type: .distance)
+        ]
+    }
+    
     override var description: String { return "Wall @ \(origin), \(endPoint), width = \(width)" }
     
     override func recache() {
@@ -174,8 +181,8 @@ class WallGraphic: LineGraphic
     }
     
     required init?(coder decoder: NSCoder) {
-        width = CGFloat(decoder.decodeDoubleForKey("width"))
-        openings = decoder.decodeObjectForKey("openings") as? [WallOpening] ?? []
+        width = CGFloat(decoder.decodeDouble(forKey: "width"))
+        openings = decoder.decodeObject(forKey: "openings") as? [WallOpening] ?? []
         super.init(coder: decoder)
     }
     
@@ -191,34 +198,34 @@ class WallGraphic: LineGraphic
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeObject(openings, forKey: "openings")
-        coder.encodeDouble(Double(width), forKey: "width")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(openings, forKey: "openings")
+        coder.encode(Double(width), forKey: "width")
     }
     
-    func intersectionsWithLine(line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func intersectionsWithLine(_ line: LineGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         return outerLines.flatMap { $0.intersectionWithLine(line, extendSelf: extendSelf, extendOther: extendOther) }
     }
     
-    func intersectionsWithWall(wg: WallGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func intersectionsWithWall(_ wg: WallGraphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         return outerLines.reduce([], combine: { return $0 + wg.intersectionsWithLine($1, extendSelf: extendSelf, extendOther: extendOther)})
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let otherWall = g as? WallGraphic {
             return intersectionsWithWall(otherWall, extendSelf: extendSelf, extendOther: extendOther)
         }
         return outerLines.reduce([], combine: { $0 + $1.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)})
     }
     
-    func addOpening(opening: WallOpening) {
+    func addOpening(_ opening: WallOpening) {
         if !openings.contains(opening) {
             openings.append(opening)
         }
     }
     
-    func removeOpening(opening: WallOpening) {
+    func removeOpening(_ opening: WallOpening) {
         openings = openings.filter { $0 != opening }
     }
     
@@ -231,7 +238,7 @@ class WallGraphic: LineGraphic
         }
     }
     
-    func wallIntersectionsInView(view: DrawingView) -> [IntersectionInfo] {
+    func wallIntersectionsInView(_ view: DrawingView) -> [IntersectionInfo] {
         var graphics = view.displayList
         if let construction = view.construction {
             graphics.append(construction)
@@ -254,29 +261,29 @@ class WallGraphic: LineGraphic
                 }
             }
         }
-        return intersections.sort { origin.distanceToPoint($0.points[0]) < origin.distanceToPoint($1.points[0]) }
+        return intersections.sorted { origin.distanceToPoint($0.points[0]) < origin.distanceToPoint($1.points[0]) }
     }
     
-    func isCloseToEnd(line: LineGraphic, intersectionInfo: IntersectionInfo) -> Bool {
+    func isCloseToEnd(_ line: LineGraphic, intersectionInfo: IntersectionInfo) -> Bool {
         return intersectionInfo.containsPoint(line.origin) || intersectionInfo.containsPoint(line.endPoint)
     }
     
-    func isEndIntersection(intersectionInfo: IntersectionInfo) -> Bool {
+    func isEndIntersection(_ intersectionInfo: IntersectionInfo) -> Bool {
         return isCloseToEnd(primaryLine, intersectionInfo: intersectionInfo) || isCloseToEnd(secondaryLine, intersectionInfo: intersectionInfo)
     }
     
-    func intersectionType(intersectionInfo: IntersectionInfo) -> IntersectionType {
+    func intersectionType(_ intersectionInfo: IntersectionInfo) -> IntersectionType {
         let otherWall = intersectionInfo.otherWall
         let otherInfo = IntersectionInfo(otherWall: self, points: intersectionInfo.points)
         switch (isEndIntersection(intersectionInfo), otherWall.isEndIntersection(otherInfo)) {
-        case (true, true): return .Corner
-        case (false, true): return .OtherTeesInto
-        case (true, false): return .ThisTeesInto
-        case(false, false): return .Crossing
+        case (true, true): return .corner
+        case (false, true): return .otherTeesInto
+        case (true, false): return .thisTeesInto
+        case(false, false): return .crossing
         }
     }
     
-    func intersectionGaps(intersection: CGPoint, otherWall: WallGraphic) -> [LineGraphic] {
+    func intersectionGaps(_ intersection: CGPoint, otherWall: WallGraphic) -> [LineGraphic] {
         var result: [LineGraphic] = []
         
         for line in outerLines {
@@ -292,11 +299,11 @@ class WallGraphic: LineGraphic
         return result
     }
     
-    func gapForIntersectionWithLine(line: LineGraphic) -> LineGraphic? {
+    func gapForIntersectionWithLine(_ line: LineGraphic) -> LineGraphic? {
         var points = outerLines.flatMap { $0.intersectionWithLine(line, extendSelf: true, extendOther: true) }
         if points.count == 2 {
             let farPoint = line.origin - line.vector
-            points.sortInPlace { farPoint.distanceToPoint($0) < farPoint.distanceToPoint($1) }
+            points.sort { farPoint.distanceToPoint($0) < farPoint.distanceToPoint($1) }
             let lg = LineGraphic(origin: points[0], endPoint: points[1])
             if centerLine.intersectionWithLine(lg) != nil {
                 return lg
@@ -305,11 +312,11 @@ class WallGraphic: LineGraphic
         return nil
     }
     
-    func segmentLine(line: LineGraphic, gaps: [LineGraphic]) -> [LineGraphic] {
+    func segmentLine(_ line: LineGraphic, gaps: [LineGraphic]) -> [LineGraphic] {
         var line = line
         var segments: [LineGraphic] = []
         let farpoint = line.origin - line.vector
-        let gaps = gaps.sort { farpoint.distanceToPoint($0.origin) < farpoint.distanceToPoint($1.origin) }
+        let gaps = gaps.sorted { farpoint.distanceToPoint($0.origin) < farpoint.distanceToPoint($1.origin) }
         
         for gap in gaps {
             let op = line.closestPointToPoint(gap.origin)
@@ -331,11 +338,11 @@ class WallGraphic: LineGraphic
         return segments
     }
     
-    func getExtendedLinesForIntersection(wg: WallGraphic) {
+    func getExtendedLinesForIntersection(_ wg: WallGraphic) {
         let info = IntersectionInfo(otherWall: wg, points: intersectionsWithWall(wg, extendSelf: true, extendOther: true))
         let type = intersectionType(info)
         let xlines = extendedLines
-        if type != .Crossing && type != .OtherTeesInto {    // need to trim any lines beyond intersection
+        if type != .crossing && type != .otherTeesInto {    // need to trim any lines beyond intersection
             for line in xlines {
                 for point in info.points.filter({ line.pointOnLine($0) }) {
                     if line.origin.distanceToPoint(point) < line.endPoint.distanceToPoint(point) {
@@ -364,7 +371,7 @@ class WallGraphic: LineGraphic
         }
     }
     
-    func segmentLineForGaps(line: LineGraphic, intersections: [IntersectionInfo], openings: [WallOpening]) -> [LineGraphic] {
+    func segmentLineForGaps(_ line: LineGraphic, intersections: [IntersectionInfo], openings: [WallOpening]) -> [LineGraphic] {
         var gaps = intersections.flatMap { $0.otherWall.gapForIntersectionWithLine(line) }
         
         gaps += openings.map { LineGraphic(origin: line.closestPointToPoint($0.origin), endPoint: line.closestPointToPoint($0.endPoint)) }
@@ -373,7 +380,7 @@ class WallGraphic: LineGraphic
         return segments
     }
     
-    override func drawInView(view: DrawingView) {
+    override func drawInView(_ view: DrawingView) {
         let path = NSBezierPath()
         ref = []
 
@@ -388,14 +395,14 @@ class WallGraphic: LineGraphic
         lineColor.set()
         // origin endcap
         if !intersections.reduce(false, combine: { return $0 || $1.containsPoint(origin) || $1.containsPoint(secondaryLine.origin)}) {
-            path.moveToPoint(primaryLine.origin)
-            path.lineToPoint(secondaryLine.origin)
+            path.move(to: primaryLine.origin)
+            path.line(to: secondaryLine.origin)
         }
         
         // endpoint endcap
         if !intersections.reduce(false, combine: { return $0 || $1.containsPoint(endPoint) || $1.containsPoint(secondaryLine.endPoint)}) {
-            path.moveToPoint(primaryLine.endPoint)
-            path.lineToPoint(secondaryLine.endPoint)
+            path.move(to: primaryLine.endPoint)
+            path.line(to: secondaryLine.endPoint)
         }
 
         for line in extendedLines {
@@ -403,8 +410,8 @@ class WallGraphic: LineGraphic
             drawnLines += segments
             
             for seg in segments {
-                path.moveToPoint(seg.origin)
-                path.lineToPoint(seg.endPoint)
+                path.move(to: seg.origin)
+                path.line(to: seg.endPoint)
             }
         }
         
@@ -418,7 +425,7 @@ class WallGraphic: LineGraphic
         }
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         for line in drawnLines {
             if let snap = line.snapCursor(location) {
                 return snap
@@ -427,7 +434,7 @@ class WallGraphic: LineGraphic
         return nil
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
         for line in outerLines {
             if line.shouldSelectInRect(rect) {
                 return true
@@ -436,7 +443,7 @@ class WallGraphic: LineGraphic
         return false
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         var cp: CGPoint = center
         for line in drawnLines {
             let p = line.closestPointToPoint(point, extended: false)
@@ -447,15 +454,15 @@ class WallGraphic: LineGraphic
         return cp
     }
 
-    override func divideAtPoint(point: CGPoint) -> [Graphic] {
+    override func divideAtPoint(_ point: CGPoint) -> [Graphic] {
         let lines = [WallGraphic(origin: origin, endPoint: point), WallGraphic(origin: point, endPoint: endPoint)]
         
         return lines
     }
     
-    override func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+    override func extendToIntersectionWith(_ g: Graphic, closeToPoint: CGPoint) -> Graphic {
         var intersections = intersectionsWithGraphic(g, extendSelf: true, extendOther: true)
-        intersections = intersections.sort { $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint) }
+        intersections = intersections.sorted { $0.distanceToPoint(closeToPoint) < $1.distanceToPoint(closeToPoint) }
         if intersections.count > 0 {
             let intersection = intersections[0]
             if intersection.distanceToPoint(origin) < intersection.distanceToPoint(endPoint) {
@@ -471,21 +478,21 @@ class WallGraphic: LineGraphic
 
 class WallTool: GraphicTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Click and drag to draw wall")
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         view.construction = nil
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         let wall = WallGraphic(origin: location, endPoint: location)
         view.construction = wall
         view.addSnapConstructionsForPoint(location, reference: [wall], includeAngles: true)
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         if let wall = view.construction as? WallGraphic {
             wall.endPoint = location
@@ -493,7 +500,7 @@ class WallTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         view.removeSnapConstructionsForReference(view.construction)
         view.addConstruction()
@@ -504,18 +511,18 @@ class OpeningTool: GraphicTool
 {
     var lastOpeningSize = CGFloat(3200)
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Click a wall to place opening")
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         view.construction = nil
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         if let opening = view.construction as? WallOpening {
             opening.unlink()
         }
@@ -534,10 +541,10 @@ class OpeningTool: GraphicTool
         view.construction = nil
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         if let _ = view.construction {
             view.addConstruction()
         }

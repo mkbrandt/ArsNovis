@@ -23,15 +23,15 @@ class BezierArcTo: NSObject
     }
 
     required init?(coder decoder: NSCoder) {
-        endPoint = decoder.decodePointForKey("endpoint")
-        ctrl1 = decoder.decodePointForKey("ctrl1")
-        ctrl2 = decoder.decodePointForKey("ctrl2")
+        endPoint = decoder.decodePoint(forKey: "endpoint")
+        ctrl1 = decoder.decodePoint(forKey: "ctrl1")
+        ctrl2 = decoder.decodePoint(forKey: "ctrl2")
     }
     
-    func encodeWithCoder(coder: NSCoder) {
-        coder.encodePoint(endPoint, forKey: "endpoint")
-        coder.encodePoint(ctrl1, forKey: "ctrl1")
-        coder.encodePoint(ctrl2, forKey: "ctrl2")
+    func encodeWithCoder(_ coder: NSCoder) {
+        coder.encode(endPoint, forKey: "endpoint")
+        coder.encode(ctrl1, forKey: "ctrl1")
+        coder.encode(ctrl2, forKey: "ctrl2")
     }
 }
 
@@ -64,7 +64,7 @@ class BezierSegment
     var bounds: CGRect { return rectContainingPoints(points) }
     var approximateLine: LineGraphic { return LineGraphic(origin: origin, endPoint: arc.endPoint) }
     
-    func subdivideAt(t: CGFloat) -> [BezierSegment] {
+    func subdivideAt(_ t: CGFloat) -> [BezierSegment] {
         let p0 = origin
         let p1 = origin * (1 - t) + arc.ctrl1 * t
         let p2 = arc.ctrl1 * (1 - t) + arc.ctrl2 * t
@@ -80,7 +80,7 @@ class BezierSegment
         return [a, b]
     }
     
-    func closestPointToPoint(point: CGPoint) -> CGPoint {
+    func closestPointToPoint(_ point: CGPoint) -> CGPoint {
         if flatnessError < ACCURACY {
             return approximateLine.closestPointToPoint(point)
         } else {
@@ -96,7 +96,7 @@ class BezierSegment
         }
     }
     
-    func intersectionsWithLine(line: LineGraphic) -> [CGPoint] {
+    func intersectionsWithLine(_ line: LineGraphic) -> [CGPoint] {
         if line.bounds.intersects(bounds) {
             if flatnessError < ACCURACY {
                 if let x = approximateLine.intersectionWithLine(line) {
@@ -112,7 +112,7 @@ class BezierSegment
         return []
     }
     
-    func intersectionsWithBezierSegment(seg: BezierSegment) -> [CGPoint] {
+    func intersectionsWithBezierSegment(_ seg: BezierSegment) -> [CGPoint] {
         if flatnessError < ACCURACY {
             return seg.intersectionsWithLine(approximateLine)
         } else if seg.flatnessError < ACCURACY {
@@ -149,6 +149,16 @@ class BezierGraphic: Graphic
         }
     }
     
+    var width: CGFloat {
+        get { return bounds.width }
+        set { }
+    }
+    
+    var height: CGFloat {
+        get { return bounds.height }
+        set { }
+    }
+    
     var segments: [BezierSegment] {
         var segs: [BezierSegment] = []
         var start = origin
@@ -158,6 +168,14 @@ class BezierGraphic: Graphic
             segs.append(seg)
         }
         return segs
+    }
+    
+    override var inspectionName: String              { return "Bezier Curve" }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Width", key: "width", type: .distance),
+            InspectionInfo(label: "Height", key: "height", type: .distance)
+        ]
     }
     
     required override init(origin: CGPoint) {
@@ -176,17 +194,17 @@ class BezierGraphic: Graphic
         }
         var points: [CGPoint] = [CGPoint(), CGPoint(), CGPoint()]
         for i in 0 ..< path.elementCount {
-            let e = path.elementAtIndex(i, associatedPoints: &points)
+            let e = path.element(at: i, associatedPoints: &points)
             switch e {
-            case .MoveToBezierPathElement:
+            case .moveToBezierPathElement:
                 origin = points[0]
-            case .CurveToBezierPathElement:
+            case .curveToBezierPathElement:
                 let arc = BezierArcTo(endPoint: points[2], ctrl1: points[0], ctrl2: points[1])
                 arcs.append(arc)
-            case .LineToBezierPathElement:
+            case .lineToBezierPathElement:
                 let arc = BezierArcTo(endPoint: points[0], ctrl1: points[0], ctrl2: points[0])
                 arcs.append(arc)
-            case .ClosePathBezierPathElement:
+            case .closePathBezierPathElement:
                 let arc = BezierArcTo(endPoint: origin, ctrl1: origin, ctrl2: origin)
                 arcs.append(arc)
             }
@@ -194,60 +212,61 @@ class BezierGraphic: Graphic
     }
 
     required init?(coder decoder: NSCoder) {
-        if let arcs = decoder.decodeObjectForKey("curves") as? [BezierArcTo] {
+        if let arcs = decoder.decodeObject(forKey: "curves") as? [BezierArcTo] {
             self.arcs = arcs
         }
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeObject(arcs, forKey: "curves")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(arcs, forKey: "curves")
     }
     
     override func recache() {
         let path = NSBezierPath()
         
-        path.moveToPoint(origin)
+        path.lineWidth = lineWidth
+        path.move(to: origin)
         for arc in arcs {
-            path.curveToPoint(arc.endPoint, controlPoint1: arc.ctrl1, controlPoint2: arc.ctrl2)
+            path.curve(to: arc.endPoint, controlPoint1: arc.ctrl1, controlPoint2: arc.ctrl2)
         }
         cachedPath = path
     }
     
-    func handleRect(point: CGPoint, size: CGFloat) -> CGRect {
+    func handleRect(_ point: CGPoint, size: CGFloat) -> CGRect {
         return CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
     }
     
-    func drawHandle(point: CGPoint, color: NSColor, view: DrawingView) {
+    func drawHandle(_ point: CGPoint, color: NSColor, view: DrawingView) {
         let handleSize = view.scaleFloat(HSIZE)
         let r = handleRect(point, size: handleSize)
-        let path = NSBezierPath(ovalInRect: r)
+        let path = NSBezierPath(ovalIn: r)
         color.set()
         path.fill()
     }
     
-    override func drawHandlesInView(view: DrawingView) {
-        let blue = NSColor.blueColor()
-        let red = NSColor.redColor()
+    override func drawHandlesInView(_ view: DrawingView) {
+        let blue = NSColor.blue()
+        let red = NSColor.red()
         let path = NSBezierPath()
         
         drawHandle(origin, color: blue, view: view)
-        path.moveToPoint(origin)
+        path.move(to: origin)
         for arc in arcs {
             drawHandle(arc.endPoint, color: blue, view: view)
             drawHandle(arc.ctrl1, color: red, view: view)
             drawHandle(arc.ctrl2, color: red, view: view)
-            path.lineToPoint(arc.ctrl1)
-            path.moveToPoint(arc.ctrl2)
-            path.lineToPoint(arc.endPoint)
+            path.line(to: arc.ctrl1)
+            path.move(to: arc.ctrl2)
+            path.line(to: arc.endPoint)
         }
         path.lineWidth = view.scaleFloat(0.5)
-        NSColor.blackColor().set()
+        NSColor.black().set()
         path.stroke()
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         if index == 0 {
             let delta = point - origin
             origin = point
@@ -278,17 +297,17 @@ class BezierGraphic: Graphic
         cachedPath = nil
     }
 
-    override func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool = false) -> CGPoint {
         var points = segments.map { return $0.closestPointToPoint(point) }
         
         if selected {
             points = self.points + points
         }
         
-        return points.sort({ return $0.distanceToPoint(point) < $1.distanceToPoint(point) })[0]
+        return points.sorted(isOrderedBefore: { return $0.distanceToPoint(point) < $1.distanceToPoint(point) })[0]
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         var graphic: BezierGraphic
         if let g = g as? BezierGraphic {
             graphic = g
@@ -307,22 +326,22 @@ class BezierGraphic: Graphic
         return intersections
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         if origin.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: origin, type: .EndPoint)
+            return SnapResult(location: origin, type: .endPoint)
         } else if let ep = arcs.last?.endPoint where ep.distanceToPoint(location) < SnapRadius {
-            return SnapResult(location: ep, type: .EndPoint)
+            return SnapResult(location: ep, type: .endPoint)
         } else {
             let p = closestPointToPoint(location)
             if p.distanceToPoint(location) < SnapRadius {
-                return SnapResult(location: p, type: .On)
+                return SnapResult(location: p, type: .on)
             }
         }
         return nil
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
-        if bounds.intersect(rect) == bounds {                   // if completely inside
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
+        if bounds.intersection(rect) == bounds {                   // if completely inside
             return true
         }
         return intersectionsWithGraphic(RectGraphic(origin: rect.origin, size: rect.size), extendSelf: false, extendOther: false).count > 0
@@ -330,7 +349,7 @@ class BezierGraphic: Graphic
 }
 
 enum BezierToolState {
-    case StartArc, EndArc
+    case startArc, endArc
 }
 
 class BezierTool: GraphicTool
@@ -339,15 +358,15 @@ class BezierTool: GraphicTool
     var firstDrag = true
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshairCursor()
+        return NSCursor.crosshair()
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.construction = nil
         view.setDrawingHint("Drawing Bezier Paths")
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         if let construct = view.construction as? BezierGraphic {
             if construct.arcs.count > 1 {
                 construct.arcs.removeLast()
@@ -360,7 +379,7 @@ class BezierTool: GraphicTool
         }
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         if let construct = view.construction as? BezierGraphic {
             if view.mouseClickCount >= 2 {
                 if construct.arcs.count > 1 {
@@ -386,7 +405,7 @@ class BezierTool: GraphicTool
         view.redrawConstruction()
    }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         if let construct = view.construction as? BezierGraphic {
             construct.arcs.last?.endPoint = location
@@ -396,7 +415,7 @@ class BezierTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         if let construct = view.construction as? BezierGraphic {
             if firstDrag {
                 let arc = BezierArcTo(endPoint: location, ctrl1: location, ctrl2: location)
@@ -415,7 +434,7 @@ class BezierTool: GraphicTool
         view.redrawConstruction()
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         mouseDragged(location, view: view)
         if let construct = view.construction as? BezierGraphic {
             if !firstDrag && !firstArc {

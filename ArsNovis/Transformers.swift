@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(DistanceTransformer) class DistanceTransformer: NSValueTransformer
+@objc(DistanceTransformer) class DistanceTransformer: ValueTransformer
 {
     var inches_RE = RegularExpression(pattern: "([[:digit:]\\.]*)(\")")
     var feet_inches_RE = RegularExpression(pattern: "([[:digit:]\\.]*)'[[:space:]]*([[:digit:]\\.]*)\"?")
@@ -19,7 +19,7 @@ import Foundation
         return true
     }
     
-    func fractionString(f: Double) -> NSString {
+    func fractionString(_ f: Double) -> NSString {
         let oneSixtyFourth = 1.0 / 64.0
         var numerator = Int(round(f / oneSixtyFourth))
         if numerator == 0 {
@@ -33,23 +33,23 @@ import Foundation
         return NSString(format: " %d/%d", numerator, denominator)
     }
     
-    func roundTo64th(v: Double) -> Double {
+    func roundTo64th(_ v: Double) -> Double {
         let sixty4ths = round(v * 64.0)
         return sixty4ths / 64.0
     }
     
-    override func transformedValue(value: AnyObject?) -> AnyObject? {
+    override func transformedValue(_ value: AnyObject?) -> AnyObject? {
         if let n = value as? NSNumber {
             var v = n.doubleValue
             
             switch measurementUnits {
-            case .Inches_frac:
+            case .inches_frac:
                 v = roundTo64th(v / 100.0)
                 let whole = Int(v)
                 let frac = v - Double(whole)
                 let fracStr = fractionString(frac)
                 return NSString(format: "%d %s\"", whole, fracStr)
-            case .Feet_frac:
+            case .feet_frac:
                 v = roundTo64th(v / 100.0)
                 let ft = Int(v) / 12
                 let inches = Int(v - Double(ft) * 12.0)
@@ -61,10 +61,10 @@ import Foundation
                 } else {
                     return NSString(format: "%d%@\"", inches, fractionString(frac))
                 }
-            case .Inches_dec:
+            case .inches_dec:
                 v /= 100.0
                 return NSString(format: "%0.6g\"", v)
-            case .Feet_dec:
+            case .feet_dec:
                 v /= 100.0
                 let ft = Int(v) / 12
                 let inches = v - Double(ft) * 12.0
@@ -75,13 +75,13 @@ import Foundation
                 } else {
                     return NSString(format: "%0.6g\"", inches)
                 }
-            case .Millimeters:
+            case .millimeters:
                 v /= 100.0 / 25.4
                 return NSString(format: "%0.6gmm", v)
             default:
                 return "\(v)pt"
             }
-        } else if let value = value as? NSValue where String.fromCString(value.objCType)!.hasPrefix("{CGPoint=") {
+        } else if let value = value as? NSValue where String(cString: value.objCType).hasPrefix("{CGPoint=") {
             let p = value.pointValue
             return NSString(format: "{%0.6g,%0.6g}", p.x, p.y)
         } else {
@@ -89,7 +89,7 @@ import Foundation
         }
     }
     
-    override func reverseTransformedValue(value: AnyObject?) -> AnyObject? {
+    override func reverseTransformedValue(_ value: AnyObject?) -> AnyObject? {
         if let s = value as? String {
             if feet_inches_RE.matchesWithString(s) {
                 var value = 0.0
@@ -139,9 +139,9 @@ import Foundation
             let v = Double(s) ?? 0.0
             
             switch measurementUnits {
-            case .Feet_dec, .Inches_dec, .Feet_frac, .Inches_frac:
+            case .feet_dec, .inches_dec, .feet_frac, .inches_frac:
                 return v * 100.0
-            case .Millimeters, .Meters:
+            case .millimeters, .meters:
                 return v * 100 / 25.4
             }
         } else {
@@ -150,9 +150,9 @@ import Foundation
     }
 }
 
-@objc(AngleTransformer) class AngleTransformer: NSValueTransformer
+@objc(AngleTransformer) class AngleTransformer: ValueTransformer
 {
-    override func transformedValue(value: AnyObject?) -> AnyObject? {
+    override func transformedValue(_ value: AnyObject?) -> AnyObject? {
         if let n = value as? NSNumber {
             let v = n.doubleValue
             
@@ -161,7 +161,7 @@ import Foundation
         return "?"
     }
     
-    override func reverseTransformedValue(value: AnyObject?) -> AnyObject? {
+    override func reverseTransformedValue(_ value: AnyObject?) -> AnyObject? {
         if let s = value as? NSString {
             return s.doubleValue / (180.0 / 3.1415926535)
         }
@@ -169,7 +169,7 @@ import Foundation
     }
 }
 
-func distanceFromString(s: String) -> CGFloat {
+func distanceFromString(_ s: String) -> CGFloat {
     let transformer = DistanceTransformer()
     if let num = transformer.reverseTransformedValue(s) {
         return CGFloat(num.doubleValue)
@@ -177,7 +177,7 @@ func distanceFromString(s: String) -> CGFloat {
     return 0.0
 }
 
-func stringFromDistance(d: CGFloat) -> String {
+func stringFromDistance(_ d: CGFloat) -> String {
     let transformer = DistanceTransformer()
     
     if let s = transformer.transformedValue(d) as? String {

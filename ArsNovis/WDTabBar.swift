@@ -27,18 +27,18 @@ class WDResizableTextField: NSTextField, NSTextFieldDelegate
         return size
     }
     
-    override func controlTextDidChange(obj: NSNotification) {
+    override func controlTextDidChange(_ obj: Notification) {
         invalidateIntrinsicContentSize()
     }
 }
 
 @objc protocol WDTabBarButtonDelegate
 {
-    func shouldBeginEditingTab(tab: WDTabBarButton) -> Bool
-    optional func didBeginEditingTab(tab: WDTabBarButton) -> ()
-    optional func didEndEditingTab(tab: WDTabBarButton) -> ()
-    func shouldSelectTab(tab: WDTabBarButton) -> Bool
-    optional func didSelectTab(tab: WDTabBarButton) -> ()
+    func shouldBeginEditingTab(_ tab: WDTabBarButton) -> Bool
+    @objc optional func didBeginEditingTab(_ tab: WDTabBarButton) -> ()
+    @objc optional func didEndEditingTab(_ tab: WDTabBarButton) -> ()
+    func shouldSelectTab(_ tab: WDTabBarButton) -> Bool
+    @objc optional func didSelectTab(_ tab: WDTabBarButton) -> ()
 }
 
 class WDTabBarButton: NSView
@@ -57,23 +57,23 @@ class WDTabBarButton: NSView
         let textFrame = NSInsetRect(bounds, 10, 5)
         label = WDResizableTextField(frame: textFrame)
         label.stringValue = "untitled"
-        label.editable = false
-        label.enabled = true
-        label.bordered = false
+        label.isEditable = false
+        label.isEnabled = true
+        label.isBordered = false
         label.drawsBackground = false
         label.action = #selector(WDTabBarButton.endEditing(_:))
         label.target = self
-        label.alignment = NSTextAlignment.Center
+        label.alignment = NSTextAlignment.center
         label.translatesAutoresizingMaskIntoConstraints = false
         
         translatesAutoresizingMaskIntoConstraints = false
         
-        addConstraint(NSLayoutConstraint(item: self, attribute: NSLayoutAttribute.Width, relatedBy: NSLayoutRelation.Equal,
-            toItem: label, attribute: NSLayoutAttribute.Width, multiplier: 1, constant: 40))
-        addConstraint(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.CenterX, relatedBy: NSLayoutRelation.Equal,
-            toItem: self, attribute: NSLayoutAttribute.CenterX, multiplier: 1, constant: 0))
-        addConstraint(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.CenterY, relatedBy: NSLayoutRelation.Equal,
-            toItem: self, attribute: NSLayoutAttribute.CenterY, multiplier: 1, constant: 0))
+        addConstraint(NSLayoutConstraint(item: self, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal,
+            toItem: label, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 40))
+        addConstraint(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal,
+            toItem: self, attribute: NSLayoutAttribute.centerX, multiplier: 1, constant: 0))
+        addConstraint(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal,
+            toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1, constant: 0))
         addSubview(label)
     }
     
@@ -81,44 +81,44 @@ class WDTabBarButton: NSView
         super.init(coder: coder)
     }
     
-    @IBAction func checkSize(sender: NSObject) {
+    @IBAction func checkSize(_ sender: NSObject) {
         needsUpdateConstraints = true
     }
     
-    @IBAction func endEditing(sender: NSObject) {
-        if label.editable {
-            label.editable = false
+    @IBAction func endEditing(_ sender: NSObject) {
+        if label.isEditable {
+            label.isEditable = false
             delegate?.didEndEditingTab?(self)
         }
     }
     
     override var intrinsicContentSize: NSSize {
         let text = label.stringValue as NSString
-        var size = text.sizeWithAttributes([:])
+        var size = text.size(withAttributes: [:])
         
         size.width += 40
         size.height += 20
         return size
     }
     
-    override func drawRect(dirtyRect: CGRect) {
-        super.drawRect(dirtyRect)
+    override func draw(_ dirtyRect: CGRect) {
+        super.draw(dirtyRect)
         
-        let fill = selected ? NSGradient(startingColor: NSColor.whiteColor(), endingColor: NSColor.lightGrayColor())
-            : NSGradient(startingColor: NSColor.grayColor(), endingColor: NSColor.lightGrayColor())
+        let fill = selected ? NSGradient(starting: NSColor.white(), ending: NSColor.lightGray())
+            : NSGradient(starting: NSColor.gray(), ending: NSColor.lightGray())
         
         if let fill = fill {
-            fill.drawInRect(bounds, angle: 90)
-            NSColor.blackColor().set()
-            NSBezierPath.strokeRect(NSInsetRect(bounds, 1, 1))
+            fill.draw(in: bounds, angle: 90)
+            NSColor.black().set()
+            NSBezierPath.stroke(NSInsetRect(bounds, 1, 1))
         }
     }
     
-    override func mouseDown(theEvent: NSEvent)
+    override func mouseDown(_ theEvent: NSEvent)
     {
         if theEvent.clickCount == 2 {
             if delegate?.shouldBeginEditingTab(self) != nil {
-                label.editable = true
+                label.isEditable = true
                 label.selectText(self)
                 delegate?.didBeginEditingTab?(self)
             }
@@ -133,10 +133,10 @@ class WDTabBarButton: NSView
 
 @objc protocol WDTabBarDelegate
 {
-    optional func tabBar(tabBar: WDTabBar, shouldSelectTabAtIndex index: Int) -> Bool
-    optional func tabBar(tabBar: WDTabBar, didSelectTabAtIndex index: Int) -> ()
-    optional func tabBar(tabBar: WDTabBar, shouldRenameTabAtIndex index: Int) -> Bool
-    optional func tabBar(tabBar: WDTabBar, didRenameTabAtIndex index: Int) -> ()
+    @objc optional func tabBar(_ tabBar: WDTabBar, shouldSelectTabAtIndex index: Int) -> Bool
+    @objc optional func tabBar(_ tabBar: WDTabBar, didSelectTabAtIndex index: Int) -> ()
+    @objc optional func tabBar(_ tabBar: WDTabBar, shouldRenameTabAtIndex index: Int) -> Bool
+    @objc optional func tabBar(_ tabBar: WDTabBar, didRenameTabAtIndex index: Int) -> ()
 }
 
 class WDTabBar: NSView, WDTabBarButtonDelegate
@@ -156,10 +156,10 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         super.init(coder: coder)
     }
     
-    override func drawRect(dirtyRect: CGRect) {
-        super.drawRect(dirtyRect)
+    override func draw(_ dirtyRect: CGRect) {
+        super.draw(dirtyRect)
         
-        NSColor.grayColor().set()
+        NSColor.gray().set()
         NSRectFill(bounds)
     }
     
@@ -169,14 +169,14 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         if tabs.count > 0 {
             let tab = tabs[0]
             
-            let leftAlign = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.Left, relatedBy: NSLayoutRelation.Equal,
-                toItem: self, attribute: NSLayoutAttribute.Left, multiplier: 1, constant: 0)
+            let leftAlign = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal,
+                toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1, constant: 0)
             
             addConstraint(leftAlign)
             buttonLayouts.append(leftAlign)
             
-            let centers = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.CenterY, relatedBy: NSLayoutRelation.Equal,
-                toItem: self, attribute: NSLayoutAttribute.CenterY, multiplier: 1, constant: 0)
+            let centers = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal,
+                toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1, constant: 0)
             
             addConstraint(centers)
             buttonLayouts.append(centers)
@@ -186,21 +186,21 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
             let tab = tabs[i]
             let prev = tabs[i - 1]
             
-            let leftAlign = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.Left, relatedBy: NSLayoutRelation.Equal,
-                toItem: prev, attribute: NSLayoutAttribute.Right, multiplier: 1, constant: -1)
+            let leftAlign = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal,
+                toItem: prev, attribute: NSLayoutAttribute.right, multiplier: 1, constant: -1)
             
             addConstraint(leftAlign)
             buttonLayouts.append(leftAlign)
             
-            let centers = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.CenterY, relatedBy: NSLayoutRelation.Equal,
-                toItem: self, attribute: NSLayoutAttribute.CenterY, multiplier: 1, constant: 0)
+            let centers = NSLayoutConstraint(item: tab, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal,
+                toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1, constant: 0)
             
             addConstraint(centers)
             buttonLayouts.append(centers)
         }
     }
     
-    func addTabWithName(name: String) {
+    func addTabWithName(_ name: String) {
         let tab = WDTabBarButton(frame: CGRect(x: 0, y: 0, width: 80, height: 30))
         
         tab.label.stringValue = name
@@ -214,7 +214,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         tabs[tabs.count - 1].selected = true
     }
     
-    func didSelectTab(aTab: WDTabBarButton) {
+    func didSelectTab(_ aTab: WDTabBarButton) {
         for tab in tabs {
             if tab != aTab {
                 tab.selected = false
@@ -222,7 +222,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         }
     }
     
-    func indexOfTab(tab: WDTabBarButton) -> Int? {
+    func indexOfTab(_ tab: WDTabBarButton) -> Int? {
         for i in 0 ..< tabs.count {
             if tabs[i] == tab {
                 return i
@@ -231,7 +231,7 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         return nil
     }
     
-    func shouldBeginEditingTab(tab: WDTabBarButton) -> Bool {
+    func shouldBeginEditingTab(_ tab: WDTabBarButton) -> Bool {
         if let index = indexOfTab(tab) {
             if let rv = delegate?.tabBar?(self, shouldRenameTabAtIndex: index) {
                 return rv
@@ -240,16 +240,16 @@ class WDTabBar: NSView, WDTabBarButtonDelegate
         return false
     }
     
-    func didBeginEditingTab(tab: WDTabBarButton) {
+    func didBeginEditingTab(_ tab: WDTabBarButton) {
     }
     
-    func didEndEditingTab(tab: WDTabBarButton) {
+    func didEndEditingTab(_ tab: WDTabBarButton) {
         if let index = indexOfTab(tab) {
             delegate?.tabBar?(self, didRenameTabAtIndex: index)
         }
     }
     
-    func shouldSelectTab(tab: WDTabBarButton) -> Bool {
+    func shouldSelectTab(_ tab: WDTabBarButton) -> Bool {
         if let index = indexOfTab(tab) {
             if let rv = delegate?.tabBar?(self, shouldSelectTabAtIndex: index) {
                 return rv

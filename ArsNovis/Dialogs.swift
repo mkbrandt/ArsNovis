@@ -16,25 +16,25 @@ class NewPageDialog: NSWindow
     @IBOutlet var copyLayersButton: NSButton!
     @IBOutlet var referencePageControl: NSPopUpButton!
     
-    @IBAction func radioSelect(sender: NSButton) {
+    @IBAction func radioSelect(_ sender: NSButton) {
         for button in [emptyPageButton, referenceLayersButton, copyLayersButton] {
             if button != sender {
-                button.state = NSOffState
+                button?.state = NSOffState
             }
         }
         sender.state = NSOnState
     }
     
-    override var canBecomeKeyWindow: Bool {
+    override var canBecomeKey: Bool {
         return true
     }
     
-    @IBAction func ok(sender: AnyObject?) {
+    @IBAction func ok(_ sender: AnyObject?) {
         sheetParent?.endSheet(self, returnCode: NSModalResponseOK)
         orderOut(self)
     }
     
-    @IBAction func cancel(sender: AnyObject?) {
+    @IBAction func cancel(_ sender: AnyObject?) {
         sheetParent?.endSheet(self, returnCode: NSModalResponseCancel)
         orderOut(self)
     }

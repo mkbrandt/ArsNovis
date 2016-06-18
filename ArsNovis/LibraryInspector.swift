@@ -26,17 +26,17 @@ class LibraryInspector: NSView, NSTableViewDataSource
         selector.removeAllItems()
     }
     
-    @IBAction func openLibrary(sender: AnyObject?) {
+    @IBAction func openLibrary(_ sender: AnyObject?) {
         let openPanel = NSOpenPanel()
         
         openPanel.allowedFileTypes = ["ars"]
         if let window = window {
-            openPanel.beginSheetModalForWindow(window) { result in
-                let fileURLs = openPanel.URLs
+            openPanel.beginSheetModal(for: window) { result in
+                let fileURLs = openPanel.urls
                 for url in fileURLs {
-                    if let lib = try? ArsDocument(contentsOfURL: url, ofType: "ars"), let libname = url.lastPathComponent {
+                    if let lib = try? ArsDocument(contentsOf: url, ofType: "ars"), let libname = url.lastPathComponent {
                         self.libraries[libname] = lib
-                        self.selector.addItemWithTitle(libname)
+                        self.selector.addItem(withTitle: libname)
                         self.table.reloadData()
                     }
                 }
@@ -44,14 +44,14 @@ class LibraryInspector: NSView, NSTableViewDataSource
         }
     }
     
-    func numberOfRowsInTableView(tableView: NSTableView) -> Int {
+    func numberOfRows(in tableView: NSTableView) -> Int {
         if let lib = selectedLibrary {
             return lib.pages.count
         }
         return 0
     }
     
-    func tableView(tableView: NSTableView, objectValueForTableColumn tableColumn: NSTableColumn?, row: Int) -> AnyObject? {
+    func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> AnyObject? {
         if let lib = selectedLibrary {
             if row < lib.pages.count {
                 return GraphicSymbol(page: lib.pages[row])
@@ -60,14 +60,14 @@ class LibraryInspector: NSView, NSTableViewDataSource
         return nil
     }
     
-    func tableView(tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
         if let lib = selectedLibrary where row < lib.pages.count {
             return GraphicSymbol(page: lib.pages[row])
         }
         return nil
     }
     
-    func tableView(tableView: NSTableView, draggingSession session: NSDraggingSession, endedAtPoint screenPoint: NSPoint, operation: NSDragOperation) {
+    func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         
     }
 }

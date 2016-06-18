@@ -12,6 +12,8 @@ class GroupGraphic: Graphic
 {
     var contents: [Graphic] = []
     
+    var contentCount: Int   { return contents.count }
+    
     override var origin: CGPoint {
         get { return bounds.origin }
         set { moveOriginTo(newValue) }
@@ -19,17 +21,28 @@ class GroupGraphic: Graphic
     
     var size: NSSize {
         set {
-            willChangeValueForKey("width")
-            willChangeValueForKey("height")
+            willChangeValue(forKey: "boundsWidth")
+            willChangeValue(forKey: "boundsHeight")
             scaleFromRect(bounds, toRect: CGRect(origin: bounds.origin, size: newValue))
             cachedPath = nil
-            didChangeValueForKey("width")
-            didChangeValueForKey("height")
+            didChangeValue(forKey: "boundsWidth")
+            didChangeValue(forKey: "boundsHeight")
         }
         get {
             return bounds.size
         }
     }
+    
+    var boundsWidth: CGFloat {
+        get { return size.width }
+        set { size = CGSize(width: newValue, height: size.height) }
+    }
+    
+    var boundsHeight: CGFloat {
+        get { return size.height }
+        set { size = CGSize(width: size.width, height: newValue) }
+    }
+    
     
     override var points: [CGPoint] {
         let topLeft = origin + CGPoint(x: 0, y: size.height)
@@ -48,6 +61,15 @@ class GroupGraphic: Graphic
         
         return b
     }
+
+    override var inspectionName: String              { return "Group" }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "Elements", key: "contentCount", type: .count),
+            InspectionInfo(label: "Width", key: "boundsWidth", type: .distance),
+            InspectionInfo(label: "Height", key: "boundsHeight", type: .distance)
+        ]
+    }
     
     init(contents: [Graphic]) {
         super.init(origin: CGPoint(x: 0, y: 0))
@@ -56,7 +78,7 @@ class GroupGraphic: Graphic
     
     required init?(coder decoder: NSCoder) {
         super.init(origin: CGPoint(x: 0, y: 0))
-        if let contents = decoder.decodeObjectForKey("contents") as? [Graphic] {
+        if let contents = decoder.decodeObject(forKey: "contents") as? [Graphic] {
             self.contents = contents
         }
     }
@@ -65,23 +87,23 @@ class GroupGraphic: Graphic
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        coder.encodeObject(contents, forKey: "contents")
+    override func encode(with coder: NSCoder) {
+        coder.encode(contents, forKey: "contents")
     }
     
-    override func moveOriginBy(vector: CGPoint) {
-        willChangeValueForKey("origin")
-        willChangeValueForKey("x")
-        willChangeValueForKey("y")
+    override func moveOriginBy(_ vector: CGPoint) {
+        willChangeValue(forKey: "origin")
+        willChangeValue(forKey: "x")
+        willChangeValue(forKey: "y")
         for g in contents {
             g.moveOriginBy(vector)
         }
-        didChangeValueForKey("origin")
-        didChangeValueForKey("x")
-        didChangeValueForKey("y")
+        didChangeValue(forKey: "origin")
+        didChangeValue(forKey: "x")
+        didChangeValue(forKey: "y")
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             let sizeDiff = point - origin
@@ -110,25 +132,25 @@ class GroupGraphic: Graphic
         }
     }
     
-    override func rotateAroundPoint(center: CGPoint, angle: CGFloat) {
+    override func rotateAroundPoint(_ center: CGPoint, angle: CGFloat) {
         for g in contents {
             g.rotateAroundPoint(center, angle: angle)
         }
     }
     
-    override func flipVerticalAroundPoint(center: CGPoint) {
+    override func flipVerticalAroundPoint(_ center: CGPoint) {
         for g in contents {
             g.flipVerticalAroundPoint(center)
         }
     }
     
-    override func flipHorizontalAroundPoint(center: CGPoint) {
+    override func flipHorizontalAroundPoint(_ center: CGPoint) {
         for g in contents {
             g.flipHorizontalAroundPoint(center)
         }
     }
     
-    override func drawInView(view: DrawingView) {
+    override func drawInView(_ view: DrawingView) {
         for g in contents {
             g.drawInView(view)
         }
@@ -137,7 +159,7 @@ class GroupGraphic: Graphic
         }
     }
     
-    override func snapCursor(location: CGPoint) -> SnapResult? {
+    override func snapCursor(_ location: CGPoint) -> SnapResult? {
         for g in contents {
             if let snap = g.snapCursor(location) {
                 return snap
@@ -146,7 +168,7 @@ class GroupGraphic: Graphic
         return nil
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         var cp = origin
         for p in points {
             if p.distanceToPoint(point) < cp.distanceToPoint(point) {
@@ -163,7 +185,7 @@ class GroupGraphic: Graphic
         return cp
     }
     
-    override func closestIntersectionWithGraphic(g: Graphic, toPoint p: CGPoint) -> CGPoint? {
+    override func closestIntersectionWithGraphic(_ g: Graphic, toPoint p: CGPoint) -> CGPoint? {
         var cp: CGPoint? = nil
         for g2 in contents {
             if let cp2 = g2.closestIntersectionWithGraphic(g, toPoint: p) {
@@ -179,13 +201,13 @@ class GroupGraphic: Graphic
         return cp
     }
     
-    override func scaleFromRect(fromRect: CGRect, toRect: CGRect) {
+    override func scaleFromRect(_ fromRect: CGRect, toRect: CGRect) {
         for g in contents {
             g.scaleFromRect(fromRect, toRect: toRect)
         }
     }
     
-    override func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         return contents.flatMap { $0.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther) }
     }
     

@@ -23,6 +23,8 @@ class LinearDimension: Graphic
         set { fontDescriptor = newValue.fontDescriptor; fontSize = newValue.pointSize }
     }
     
+    var fontName: String { return font.fontName }
+    
     var measurement: CGPoint        { return endPoint - origin }
     var leadAngle: CGFloat          { return measurement.angle + PI / 2 }
     var originLeadLine: CGPoint     { return CGPoint(length: verticalOffset, angle: leadAngle) }
@@ -42,47 +44,56 @@ class LinearDimension: Graphic
     override var points: [CGPoint]  { return [origin, endPoint, dimCenter] }
     override var bounds: CGRect     { return rectContainingPoints([origin, endPoint, originLeadPoint, endLeadPoint]) }
     
+    override var inspectionName: String              { return "Linear Dimension" }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "text", key: "text", type: .string),
+            InspectionInfo(label: "Font", key: "fontName", type: .string),
+            InspectionInfo(label: "Size", key: "fontSize", type: .float)
+        ]
+    }
+    
     init(origin: CGPoint, endPoint: CGPoint) {
         self.endPoint = endPoint
         super.init(origin: origin)
-        lineColor = lineColor.colorWithAlphaComponent(0.3)
+        lineColor = lineColor.withAlphaComponent(0.3)
     }
     
     required init?(coder decoder: NSCoder) {
-        endPoint = decoder.decodePointForKey("endPoint")
+        endPoint = decoder.decodePoint(forKey: "endPoint")
         super.init(coder: decoder)
-        if let text = decoder.decodeObjectForKey("text") as? String {
+        if let text = decoder.decodeObject(forKey: "text") as? String {
             self.text = text
         }
-        if let units = decoder.decodeObjectForKey("units") as? String {
+        if let units = decoder.decodeObject(forKey: "units") as? String {
             self.units = units
         }
-        verticalOffset = CGFloat(decoder.decodeDoubleForKey("vertical"))
-        horizontalOffset = CGFloat(decoder.decodeDoubleForKey("horizontal"))
+        verticalOffset = CGFloat(decoder.decodeDouble(forKey: "vertical"))
+        horizontalOffset = CGFloat(decoder.decodeDouble(forKey: "horizontal"))
     }
 
     required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodePoint(endPoint, forKey: "endPoint")
-        coder.encodeObject(text, forKey: "text")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(endPoint, forKey: "endPoint")
+        coder.encode(text, forKey: "text")
         if let units = units {
-            coder.encodeObject(units, forKey: "units")
+            coder.encode(units, forKey: "units")
         }
-        coder.encodeDouble(Double(verticalOffset), forKey: "vertical")
-        coder.encodeDouble(Double(horizontalOffset), forKey: "horizontal")
+        coder.encode(Double(verticalOffset), forKey: "vertical")
+        coder.encode(Double(horizontalOffset), forKey: "horizontal")
     }
     
     override func recache() {
     }
     
-    func drawLeaderLinesInView(view: DrawingView) {
+    func drawLeaderLinesInView(_ view: DrawingView) {
         let context = view.context
         
-        CGContextSaveGState(context)
+        context?.saveGState()
         lineColor.set()
         
         let leadOffset = view.scaleFloat(5)
@@ -92,23 +103,23 @@ class LinearDimension: Graphic
         let endPointLeadEnd = endPointLeadStart + endPointLeadLine
         
         NSBezierPath.setDefaultLineWidth(view.scaleFloat(0.5))
-        NSBezierPath.strokeLineFromPoint(originLeadStart, toPoint: originLeadEnd)
-        NSBezierPath.strokeLineFromPoint(endPointLeadStart, toPoint: endPointLeadEnd)
+        NSBezierPath.strokeLine(from: originLeadStart, to: originLeadEnd)
+        NSBezierPath.strokeLine(from: endPointLeadStart, to: endPointLeadEnd)
         
-        CGContextRestoreGState(context)
+        context?.restoreGState()
     }
     
-    override func drawInView(view: DrawingView) {
+    override func drawInView(_ view: DrawingView) {
         let context = view.context
         
-        CGContextSaveGState(context)
+        context?.saveGState()
         
         drawLeaderLinesInView(view)
         
-        CGContextTranslateCTM(context, origin.x, origin.y)
-        CGContextRotateCTM(context, measurement.angle)
+        context?.translate(x: origin.x, y: origin.y)
+        context?.rotate(byAngle: measurement.angle)
         lineColor.set()
-        CGContextSetLineWidth(context, view.scaleFloatToDrawing(0.5))
+        context?.setLineWidth(view.scaleFloatToDrawing(0.5))
        
         let x1 = measurement.length
         let y1 = verticalOffset
@@ -118,46 +129,46 @@ class LinearDimension: Graphic
         if let font = NSFont(descriptor: fontDescriptor, size: view.scaleFloatToDrawing(fontSize)) {
             attrib[NSFontAttributeName] = font
         }
-        let textSize = dim.sizeWithAttributes(attrib)
+        let textSize = dim.size(withAttributes: attrib)
         let textRect = CGRect(x: d0 - textSize.width / 2, y: y1 - textSize.height / 2, width: textSize.width, height: textSize.height)
         
         // dimension line
-        CGContextMoveToPoint(context, 0, y1)
-        CGContextAddLineToPoint(context, x1, y1)
-        CGContextStrokePath(context)
+        context?.moveTo(x: 0, y: y1)
+        context?.addLineTo(x: x1, y: y1)
+        context?.strokePath()
         
         // add arrows
         let arrowLength = view.scaleFloatToDrawing(applicationDefaults.dimensionArrowLength)
         let arrowWidth = view.scaleFloatToDrawing(applicationDefaults.dimensionArrowWidth)
         
-        CGContextMoveToPoint(context, 0, y1)
-        CGContextAddLineToPoint(context, arrowLength, y1 - arrowWidth / 2)
-        CGContextAddLineToPoint(context, arrowLength, y1 + arrowWidth / 2)
-        CGContextAddLineToPoint(context, 0, y1)
+        context?.moveTo(x: 0, y: y1)
+        context?.addLineTo(x: arrowLength, y: y1 - arrowWidth / 2)
+        context?.addLineTo(x: arrowLength, y: y1 + arrowWidth / 2)
+        context?.addLineTo(x: 0, y: y1)
         
-        CGContextMoveToPoint(context, x1, y1)
-        CGContextAddLineToPoint(context, x1 - arrowLength, y1 - arrowWidth / 2)
-        CGContextAddLineToPoint(context, x1 - arrowLength, y1 + arrowWidth / 2)
-        CGContextAddLineToPoint(context, x1, y1)
-        CGContextFillPath(context)
+        context?.moveTo(x: x1, y: y1)
+        context?.addLineTo(x: x1 - arrowLength, y: y1 - arrowWidth / 2)
+        context?.addLineTo(x: x1 - arrowLength, y: y1 + arrowWidth / 2)
+        context?.addLineTo(x: x1, y: y1)
+        context?.fillPath()
         
         // add dimension text
-        NSColor.whiteColor().set()
+        NSColor.white().set()
         let inset = view.scaleFloat(10)
-        CGContextFillRect(context, textRect.insetBy(dx: -inset, dy: 0))
-        dim.drawAtPoint(textRect.origin, withAttributes: attrib)
+        context?.fill(textRect.insetBy(dx: -inset, dy: 0))
+        dim.draw(at: textRect.origin, withAttributes: attrib)
         
-        CGContextRestoreGState(context)
+        context?.restoreGState()
         if selected {
             drawHandlesInView(view)
         }
     }
     
-    override func shouldSelectInRect(rect: CGRect) -> Bool {
+    override func shouldSelectInRect(_ rect: CGRect) -> Bool {
         return dimLine.shouldSelectInRect(rect)
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         var cp = dimLine.closestPointToPoint(point)
         
         for p in points {
@@ -169,7 +180,7 @@ class LinearDimension: Graphic
         return cp
     }
     
-    override func setPoint(point: CGPoint, atIndex index: Int) {
+    override func setPoint(_ point: CGPoint, atIndex index: Int) {
         switch index {
         case 0:
             origin = point
@@ -186,9 +197,9 @@ class LinearDimension: Graphic
         }
     }
     
-    override func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
+    override func addReshapeSnapConstructionsAtPoint(_ point: CGPoint, toView: DrawingView) {
         let dl = dimLine
-        dl.lineColor = NSColor.clearColor()
+        dl.lineColor = NSColor.clear()
         dl.ref = [self]
         let cl = ConstructionLine(origin: measureLine.center, endPoint: measureLine.center + originLeadLine, reference: [self])
         toView.snapConstructions = [dl, cl]
@@ -220,12 +231,12 @@ class LinearDimensionTool: GraphicTool
     var state = 0
     var construct: LinearDimension?
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Dimension: Select first point")
         state = 0
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         if let construct = construct {
             view.removeSnapConstructionsForReference(construct)
         }
@@ -234,11 +245,11 @@ class LinearDimensionTool: GraphicTool
         view.construction = nil
     }
     
-    func makeDimension(origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
+    func makeDimension(_ origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
         return LinearDimension(origin: origin, endPoint: endPoint)
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         switch state {
         case 0:
             let dim = makeDimension(location, endPoint: location)
@@ -252,8 +263,8 @@ class LinearDimensionTool: GraphicTool
                 construct.endPoint = location
                 let defLead = construct.dimLine
                 let defLead2 = LineGraphic(origin: construct.origin - construct.originLeadLine, endPoint: construct.endPoint - construct.endPointLeadLine)
-                defLead.lineColor = NSColor.clearColor()
-                defLead2.lineColor = NSColor.clearColor()
+                defLead.lineColor = NSColor.clear()
+                defLead2.lineColor = NSColor.clear()
                 defLead.ref = [construct]
                 defLead2.ref = [construct]
                 view.snapConstructions = [defLead, defLead2]
@@ -268,7 +279,7 @@ class LinearDimensionTool: GraphicTool
                 let angleBetween = normalizeAngle(perp.angle - dim.angle)
                 construct.verticalOffset = sign(angleBetween) * perp.length
                 construct.horizontalOffset = dim.origin.distanceToPoint(p) - dim.length / 2
-                construct.lineColor = construct.lineColor.colorWithAlphaComponent(1.0)
+                construct.lineColor = construct.lineColor.withAlphaComponent(1.0)
                 view.addConstruction()
                 view.removeSnapConstructionsForReference(construct)
                 self.construct = nil
@@ -278,7 +289,7 @@ class LinearDimensionTool: GraphicTool
         }
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         if let construct = construct {
             switch state {
             case 1:
@@ -296,20 +307,20 @@ class LinearDimensionTool: GraphicTool
         }
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
     }
 }
 
 class HorizontalDimensionTool: LinearDimensionTool
 {
-    override func makeDimension(origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
+    override func makeDimension(_ origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
         return HorizontalDimension(origin: origin, endPoint: endPoint)
     }
 }
 
 class VerticalDimensionTool: LinearDimensionTool
 {
-    override func makeDimension(origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
+    override func makeDimension(_ origin: CGPoint, endPoint: CGPoint) -> LinearDimension {
         return VerticalDimension(origin: origin, endPoint: endPoint)
     }
 }

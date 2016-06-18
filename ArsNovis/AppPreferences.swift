@@ -14,7 +14,7 @@ class ArsToolbarItem: NSToolbarItem
 }
 
 let appDefaults: [String: AnyObject] = [
-    "defaultUnits": MeasurementUnits.Feet_frac.rawValue,
+    "defaultUnits": MeasurementUnits.feet_frac.rawValue,
     "dimensionFontName": "Helvetica",
     "dimensionFontSize": 12.0,
     "dimensionArrowWidth": 6.0,
@@ -33,7 +33,7 @@ class AppPreferences: NSPanel
         }
     }
     
-    @IBAction func chooseContents(sender: ArsToolbarItem) {
+    @IBAction func chooseContents(_ sender: ArsToolbarItem) {
         if let newContent = sender.toolView, let contentSize = contentView?.frame.size {
             var newFrame = frame
             newFrame.size.height = newFrame.size.height - contentSize.height + newContent.frame.size.height
@@ -54,61 +54,61 @@ class PreviewDrawing: DrawingView {
         set {_displayList = newValue}
     }
     
-    override func mouseDown(theEvent: NSEvent) {
+    override func mouseDown(_ theEvent: NSEvent) {
     }
     
-    override func mouseMoved(theEvent: NSEvent) {
+    override func mouseMoved(_ theEvent: NSEvent) {
     }
     
-    override func mouseUp(theEvent: NSEvent) {
+    override func mouseUp(_ theEvent: NSEvent) {
     }
     
-    override func mouseDragged(theEvent: NSEvent) {
+    override func mouseDragged(_ theEvent: NSEvent) {
     }
 }
 
 class ArsUserDefaults: NSObject
 {
-    var userDefaults = NSUserDefaults.standardUserDefaults()
+    var userDefaults = UserDefaults.standard()
     
     var defaultUnits: MeasurementUnits {
-        get { return MeasurementUnits(rawValue: userDefaults.integerForKey("defaultUnits")) ?? .Feet_frac }
-        set { userDefaults.setInteger(newValue.rawValue, forKey: "defaultUnits") }
+        get { return MeasurementUnits(rawValue: userDefaults.integer(forKey: "defaultUnits")) ?? .feet_frac }
+        set { userDefaults.set(newValue.rawValue, forKey: "defaultUnits") }
     }
     
     var dimensionFontName: String {
-        get { return userDefaults.stringForKey("dimensionFontName") ?? "Helvetica" }
+        get { return userDefaults.string(forKey: "dimensionFontName") ?? "Helvetica" }
         set { userDefaults.setValue(newValue, forKey: "dimensionFontName") }
     }
     
     var dimensionFontSize: CGFloat {
-        get { return CGFloat(userDefaults.doubleForKey("dimensionFontSize") ?? 12) }
-        set { userDefaults.setDouble(Double(newValue), forKey: "dimensionFontSize") }
+        get { return CGFloat(userDefaults.double(forKey: "dimensionFontSize") ?? 12) }
+        set { userDefaults.set(Double(newValue), forKey: "dimensionFontSize") }
     }
     
     var dimensionArrowWidth: CGFloat {
-        get { return CGFloat(userDefaults.doubleForKey("dimensionArrowWidth") ?? 12) }
-        set { userDefaults.setDouble(Double(newValue), forKey: "dimensionArrowWidth") }
+        get { return CGFloat(userDefaults.double(forKey: "dimensionArrowWidth") ?? 12) }
+        set { userDefaults.set(Double(newValue), forKey: "dimensionArrowWidth") }
     }
     
     var dimensionArrowLength: CGFloat {
-        get { return CGFloat(userDefaults.doubleForKey("dimensionArrowLength") ?? 12) }
-        set { userDefaults.setDouble(Double(newValue), forKey: "dimensionArrowLength") }
+        get { return CGFloat(userDefaults.double(forKey: "dimensionArrowLength") ?? 12) }
+        set { userDefaults.set(Double(newValue), forKey: "dimensionArrowLength") }
     }
     
     var textFontName: String {
-        get { return userDefaults.stringForKey("textFontName") ?? "Helvetica" }
+        get { return userDefaults.string(forKey: "textFontName") ?? "Helvetica" }
         set { userDefaults.setValue(newValue, forKey: "textFontName") }
     }
 
     var textFontSize: CGFloat {
-        get { return CGFloat(userDefaults.doubleForKey("textFontSize") ?? 12) }
-        set { userDefaults.setDouble(Double(newValue), forKey: "textFontSize") }
+        get { return CGFloat(userDefaults.double(forKey: "textFontSize") ?? 12) }
+        set { userDefaults.set(Double(newValue), forKey: "textFontSize") }
     }
     
     var pageSize: CGSize? {
         get {
-            if let width = userDefaults.valueForKey("pageWidth"), let height = userDefaults.valueForKey("pageHeight") {
+            if let width = userDefaults.value(forKey: "pageWidth"), let height = userDefaults.value(forKey: "pageHeight") {
                 return CGSize(width: CGFloat(width.doubleValue), height: CGFloat(height.doubleValue))
             }
             return nil
@@ -118,15 +118,15 @@ class ArsUserDefaults: NSObject
                 userDefaults.setValue(size.height, forKey: "pageHeight")
                 userDefaults.setValue(size.width, forKey: "pageWidth")
             } else {
-                userDefaults.removeObjectForKey("pageHeight")
-                userDefaults.removeObjectForKey("pageWidth")
+                userDefaults.removeObject(forKey: "pageHeight")
+                userDefaults.removeObject(forKey: "pageWidth")
             }
         }
     }
     
     var pageScale: CGFloat {
-        get { return CGFloat(userDefaults.doubleForKey("pageScale") ?? 1.0) }
-        set { userDefaults.setDouble(Double(newValue), forKey: "pageScale") }
+        get { return CGFloat(userDefaults.double(forKey: "pageScale") ?? 1.0) }
+        set { userDefaults.set(Double(newValue), forKey: "pageScale") }
     }
     
     var dimensionFont: NSFont {
@@ -134,7 +134,7 @@ class ArsUserDefaults: NSObject
             if let font = NSFont(name: dimensionFontName, size: dimensionFontSize) {
                 return font
             }
-            return NSFont.systemFontOfSize(dimensionFontSize)
+            return NSFont.systemFont(ofSize: dimensionFontSize)
         }
         set {
             dimensionFontName = newValue.fontName
@@ -147,7 +147,7 @@ class ArsUserDefaults: NSObject
             if let font = NSFont(name: textFontName, size: textFontSize) {
                 return font
             }
-            return NSFont.systemFontOfSize(textFontSize)
+            return NSFont.systemFont(ofSize: textFontSize)
         }
         set {
             textFontName = newValue.fontName
@@ -181,28 +181,28 @@ class DimensionPreferenceView: NSView
         let org = CGFloat(20.0)
         let r = RectGraphic(origin: CGPoint(x: org, y: 10), size: CGSize(width: width, height: 20))
         let dim = LinearDimension(origin: CGPoint(x: org, y: 30), endPoint: CGPoint(x: org + width, y: 30))
-        dim.lineColor = dim.lineColor.colorWithAlphaComponent(1.0)
+        dim.lineColor = dim.lineColor.withAlphaComponent(1.0)
         preview.displayList = [r, dim]
         preview.needsDisplay = true
     }
     
-    @IBAction func showFontPanel(sender: AnyObject?) {
-        let fontManager = NSFontManager.sharedFontManager()
+    @IBAction func showFontPanel(_ sender: AnyObject?) {
+        let fontManager = NSFontManager.shared()
         let fontPanel = fontManager.fontPanel(true)
         fontPanel?.orderFront(self)
         fontPanel?.setPanelFont(applicationDefaults.dimensionFont, isMultiple: false)
         window?.makeFirstResponder(self)
     }
     
-    @IBAction override func changeFont(sender: AnyObject?) {
-        let fontManager = NSFontManager.sharedFontManager()
-        let newFont = fontManager.convertFont(applicationDefaults.dimensionFont)
+    @IBAction override func changeFont(_ sender: AnyObject?) {
+        let fontManager = NSFontManager.shared()
+        let newFont = fontManager.convert(applicationDefaults.dimensionFont)
         applicationDefaults.dimensionFontSize = newFont.pointSize
         applicationDefaults.dimensionFontName = newFont.fontName
         updatePreview()
     }
     
-    @IBAction func lengthChange(sender: NSControl) {
+    @IBAction func lengthChange(_ sender: NSControl) {
         let value = sender.floatValue
         arrowLengthField.floatValue = value
         lengthStepper.floatValue = value
@@ -210,7 +210,7 @@ class DimensionPreferenceView: NSView
         updatePreview()
     }
     
-    @IBAction func widthChange(sender: NSControl) {
+    @IBAction func widthChange(_ sender: NSControl) {
         let value = sender.floatValue
         arrowWidthField.floatValue = value
         widthStepper.floatValue = value
@@ -223,53 +223,53 @@ class DimensionPreferenceView: NSView
 
 class UnitsPreferences: NSView
 {
-    var defaultUnits: MeasurementUnits = .Feet_frac {
+    var defaultUnits: MeasurementUnits = .feet_frac {
         willSet {
-            willChangeValueForKey("unitsInchesDecimal")
-            willChangeValueForKey("unitsInchesFractional")
-            willChangeValueForKey("unitsFeetDecimal")
-            willChangeValueForKey("unitsFeetFractional")
-            willChangeValueForKey("unitsMeters")
-            willChangeValueForKey("unitsMillimeters")
+            willChangeValue(forKey: "unitsInchesDecimal")
+            willChangeValue(forKey: "unitsInchesFractional")
+            willChangeValue(forKey: "unitsFeetDecimal")
+            willChangeValue(forKey: "unitsFeetFractional")
+            willChangeValue(forKey: "unitsMeters")
+            willChangeValue(forKey: "unitsMillimeters")
         }
         didSet {
-            didChangeValueForKey("unitsInchesDecimal")
-            didChangeValueForKey("unitsInchesFractional")
-            didChangeValueForKey("unitsFeetDecimal")
-            didChangeValueForKey("unitsFeetFractional")
-            didChangeValueForKey("unitsMeters")
-            didChangeValueForKey("unitsMillimeters")
-            NSUserDefaults.standardUserDefaults().setInteger(defaultUnits.rawValue, forKey: "defaultUnits")
+            didChangeValue(forKey: "unitsInchesDecimal")
+            didChangeValue(forKey: "unitsInchesFractional")
+            didChangeValue(forKey: "unitsFeetDecimal")
+            didChangeValue(forKey: "unitsFeetFractional")
+            didChangeValue(forKey: "unitsMeters")
+            didChangeValue(forKey: "unitsMillimeters")
+            UserDefaults.standard().set(defaultUnits.rawValue, forKey: "defaultUnits")
         }
     }
     
     var unitsInchesDecimal: Bool {
-        get { return defaultUnits == .Inches_dec }
-        set { if newValue { defaultUnits = .Inches_dec } }
+        get { return defaultUnits == .inches_dec }
+        set { if newValue { defaultUnits = .inches_dec } }
     }
     var unitsInchesFractional: Bool {
-        get { return defaultUnits == .Inches_frac }
-        set { if newValue { defaultUnits = .Inches_frac } }
+        get { return defaultUnits == .inches_frac }
+        set { if newValue { defaultUnits = .inches_frac } }
     }
     var unitsFeetDecimal: Bool {
-        get { return defaultUnits == .Feet_dec }
-        set { if newValue { defaultUnits = .Feet_dec } }
+        get { return defaultUnits == .feet_dec }
+        set { if newValue { defaultUnits = .feet_dec } }
     }
     var unitsFeetFractional: Bool {
-        get { return defaultUnits == .Feet_frac }
-        set { if newValue { defaultUnits = .Feet_frac } }
+        get { return defaultUnits == .feet_frac }
+        set { if newValue { defaultUnits = .feet_frac } }
     }
     var unitsMeters: Bool {
-        get { return defaultUnits == .Meters }
-        set { if newValue { defaultUnits = .Meters } }
+        get { return defaultUnits == .meters }
+        set { if newValue { defaultUnits = .meters } }
     }
     var unitsMillimeters: Bool {
-        get { return defaultUnits == .Millimeters }
-        set { if newValue { defaultUnits = .Millimeters } }
+        get { return defaultUnits == .millimeters }
+        set { if newValue { defaultUnits = .millimeters } }
     }
     
     override func awakeFromNib() {
-        let units = NSUserDefaults.standardUserDefaults().integerForKey("defaultUnits")
+        let units = UserDefaults.standard().integer(forKey: "defaultUnits")
         if let defaultUnits = MeasurementUnits(rawValue: units) {
             self.defaultUnits = defaultUnits
         }
@@ -290,9 +290,9 @@ class DrawingPreferenceView: NSView
     
     override func awakeFromNib() {
         pageSizePopup.removeAllItems()
-        pageSizePopup.addItemsWithTitles(drawingSizes.map { $0.name })
+        pageSizePopup.addItems(withTitles: drawingSizes.map { $0.name })
         pageScalePopup.removeAllItems()
-        pageScalePopup.addItemsWithTitles(drawingScales.map { $0.name })
+        pageScalePopup.addItems(withTitles: drawingScales.map { $0.name })
         showScale()
         showPageInfo()
     }
@@ -319,7 +319,7 @@ class DrawingPreferenceView: NSView
                 (numerator, denominator) = ("1", "\(invScale)")
             }
         }
-        pageScalePopup.selectItemWithTitle(scaleTitle)
+        pageScalePopup.selectItem(withTitle: scaleTitle)
         scaleNumerator.stringValue = numerator
         scaleDenominator.stringValue = denominator
     }
@@ -332,20 +332,20 @@ class DrawingPreferenceView: NSView
 
             for dwgSize in drawingSizes {
                 if dwgSize.size.width == pageSize.width && dwgSize.size.height == pageSize.height {
-                    pageSizePopup.selectItemWithTitle(dwgSize.name)
+                    pageSizePopup.selectItem(withTitle: dwgSize.name)
                     pageOrientation.selectedSegment = 0
                     return
                 } else if dwgSize.size.width == pageSize.height && dwgSize.size.height == pageSize.width {
-                    pageSizePopup.selectItemWithTitle(dwgSize.name)
+                    pageSizePopup.selectItem(withTitle: dwgSize.name)
                     pageOrientation.selectedSegment = 1
                     return
                 }
             }
-            pageSizePopup.selectItemAtIndex(0)
+            pageSizePopup.selectItem(at: 0)
         }
     }
     
-    @IBAction func pageSettingsChanged(sender: AnyObject?) {
+    @IBAction func pageSettingsChanged(_ sender: AnyObject?) {
         let index = pageSizePopup.indexOfSelectedItem
         if index == 0 {
             applicationDefaults.pageSize = nil
@@ -361,7 +361,7 @@ class DrawingPreferenceView: NSView
         showPageInfo()
     }
     
-    @IBAction func scaleSettingsChanged(sender: AnyObject?) {
+    @IBAction func scaleSettingsChanged(_ sender: AnyObject?) {
         let index = pageScalePopup.indexOfSelectedItem
         if let _ = sender as? NSPopUpButton {
             if index == 0 {

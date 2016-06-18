@@ -23,7 +23,7 @@ class DocInspectorView: NSView
     
     var currentInspector: NSView?
     
-    @IBAction func setInspectorFrom(sender: InspectorButton) {
+    @IBAction func setInspectorFrom(_ sender: InspectorButton) {
         if let inspector = currentInspector {
             removeConstraints(inspectorConstraints)
             inspector.removeFromSuperview()
@@ -32,35 +32,35 @@ class DocInspectorView: NSView
             inspectorConstraints = []
             inspector.translatesAutoresizingMaskIntoConstraints = false
             inspectorView.addSubview(inspector)
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Left, relatedBy: .Equal, toItem: inspectorView, attribute: .Left, multiplier: 1, constant: 0))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Right, relatedBy: .Equal, toItem: inspectorView, attribute: .Right, multiplier: 1, constant: 0))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Top, relatedBy: .Equal, toItem: inspectorView, attribute: .Top, multiplier: 1, constant: 0))
-            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .Bottom, relatedBy: .Equal, toItem: inspectorView, attribute: .Bottom, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .left, relatedBy: .equal, toItem: inspectorView, attribute: .left, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .right, relatedBy: .equal, toItem: inspectorView, attribute: .right, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .top, relatedBy: .equal, toItem: inspectorView, attribute: .top, multiplier: 1, constant: 0))
+            inspectorConstraints.append(NSLayoutConstraint(item: inspector, attribute: .bottom, relatedBy: .equal, toItem: inspectorView, attribute: .bottom, multiplier: 1, constant: 0))
             addConstraints(inspectorConstraints)
             currentInspector = inspector
         }
     }
     
-    @IBAction func toggleVisibility(sender: AnyObject?) {
+    @IBAction func toggleVisibility(_ sender: AnyObject?) {
         if widthConstraint.constant == 0 {
             widthConstraint.constant = 200
         } else {
             widthConstraint.constant = 0
         }
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1000000), dispatch_get_main_queue()) {
+        DispatchQueue.main.after(when: DispatchTime.now() + Double(1000000) / Double(NSEC_PER_SEC)) {
             self.drawingView.zoomByFactor(2.0)
             self.drawingView.zoomByFactor(0.5)
         }
     }
     
-    override func drawRect(dirtyRect: NSRect) {
-        let context = NSGraphicsContext.currentContext()?.CGContext
+    override func draw(_ dirtyRect: NSRect) {
+        let context = NSGraphicsContext.current()?.cgContext
         
         NSColor(white: 0.95, alpha: 1.0).set()
-        CGContextFillRect(context, bounds)
-        NSColor.lightGrayColor().set()
+        context?.fill(bounds)
+        NSColor.lightGray().set()
         NSBezierPath.setDefaultLineWidth(1.0)
-        NSBezierPath.strokeRect(bounds.insetBy(dx: 0.5, dy: 0.5))
+        NSBezierPath.stroke(bounds.insetBy(dx: 0.5, dy: 0.5))
     }
 }
 
@@ -124,36 +124,36 @@ class PageInspectorView: NSView
                     pageOrientation.selectedSegment = 0
                     pageWidth.stringValue = "infinite"
                     pageHeight.stringValue = "infinite"
-                    pageSizePopup.selectItemAtIndex(0)
+                    pageSizePopup.selectItem(at: 0)
                     return
                 }
                 
                 for dwgSize in drawingSizes {
                     if dwgSize.size.width == page.pageRect?.width && dwgSize.size.height == page.pageRect?.height {
-                        pageSizePopup.selectItemWithTitle(dwgSize.name)
+                        pageSizePopup.selectItem(withTitle: dwgSize.name)
                         pageOrientation.selectedSegment = 0
                         return
                     } else if dwgSize.size.width == page.pageRect?.height && dwgSize.size.height == page.pageRect?.width {
-                        pageSizePopup.selectItemWithTitle(dwgSize.name)
+                        pageSizePopup.selectItem(withTitle: dwgSize.name)
                         pageOrientation.selectedSegment = 1
                         return
                     }
                 }
-                pageSizePopup.selectItemAtIndex(1)
+                pageSizePopup.selectItem(at: 1)
             }
         }
     }
     
     override func awakeFromNib() {
         pageSizePopup.removeAllItems()
-        pageSizePopup.addItemsWithTitles(drawingSizes.map { $0.name })
+        pageSizePopup.addItems(withTitles: drawingSizes.map { $0.name })
         pageScalePopup.removeAllItems()
-        pageScalePopup.addItemsWithTitles(drawingScales.map { $0.name })
+        pageScalePopup.addItems(withTitles: drawingScales.map { $0.name })
         let p = page
         page = p            // trigger binding after popup is configured
     }
     
-    func showScaleForPage(page: ArsPage) {
+    func showScaleForPage(_ page: ArsPage) {
         let pageScale = page.pageScale
         var (numerator, denominator) = ("\(pageScale)" , "1")
         var scaleTitle = "Custom"
@@ -175,12 +175,12 @@ class PageInspectorView: NSView
                 (numerator, denominator) = ("1", "\(invScale)")
             }
         }
-        pageScalePopup.selectItemWithTitle(scaleTitle)
+        pageScalePopup.selectItem(withTitle: scaleTitle)
         scaleNumerator.stringValue = numerator
         scaleDenominator.stringValue = denominator
     }
     
-    @IBAction func pageSettingsChanged(sender: AnyObject?) {
+    @IBAction func pageSettingsChanged(_ sender: AnyObject?) {
         if let page = page {
             let index = pageSizePopup.indexOfSelectedItem
             if index == 0 {
@@ -199,7 +199,7 @@ class PageInspectorView: NSView
         drawingView.checkViewBoundries()
     }
     
-    @IBAction func scaleSettingsChanged(sender: AnyObject?) {
+    @IBAction func scaleSettingsChanged(_ sender: AnyObject?) {
         let index = pageScalePopup.indexOfSelectedItem
         if let _ = sender as? NSPopUpButton {
             if index == 0 {
@@ -245,7 +245,7 @@ class LayerInspectorView: NSView
     @IBOutlet var document: ArsDocument!
     @IBOutlet var gridSizeField: NSTextField!
     
-    @IBAction func layerEnableChanged(sender: NSButton) {
+    @IBAction func layerEnableChanged(_ sender: NSButton) {
         document.layerEnableChanged(sender)
     }    
 }

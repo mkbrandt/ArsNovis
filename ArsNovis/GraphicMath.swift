@@ -33,11 +33,11 @@ func /(a: CGPoint, b: CGFloat) -> CGPoint {
     return CGPoint(x: a.x / b, y: a.y / b)
 }
 
-func crossProduct(a: CGPoint, _ b: CGPoint) -> CGFloat {
+func crossProduct(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
     return a.x * b.y - a.y * b.x
 }
 
-func dotProduct(a: CGPoint, _ b: CGPoint) -> CGFloat {
+func dotProduct(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
     return a.x * b.x + a.y * b.y
 }
 
@@ -68,7 +68,7 @@ func /(a: CGSize, b: CGFloat) -> CGSize {
     return CGSize(width: a.width / b, height: a.height / b)
 }
 
-func rectContainingPoints(array: [CGPoint]) -> CGRect {
+func rectContainingPoints(_ array: [CGPoint]) -> CGRect {
     var x_min = CGFloat.infinity
     var x_max = -CGFloat.infinity
     var y_min = CGFloat.infinity
@@ -89,20 +89,20 @@ func rectContainingPoints(array: [CGPoint]) -> CGRect {
 
 // MARK: utilities
 
-func constrainTo45Degrees(location: CGPoint, relativeToPoint startPoint: CGPoint) -> CGPoint {
+func constrainTo45Degrees(_ location: CGPoint, relativeToPoint startPoint: CGPoint) -> CGPoint {
     let delta = location - startPoint
     let maxoffset = max(abs(delta.x), abs(delta.y))
     return startPoint + CGPoint(x: sign(delta.x) * maxoffset, y: sign(delta.y) * maxoffset)
 }
 
-func sign(f: CGFloat) -> CGFloat {
+func sign(_ f: CGFloat) -> CGFloat {
     if f < 0 {
         return -1
     }
     return 1
 }
 
-func normalizeAngle(angle: CGFloat) -> CGFloat {
+func normalizeAngle(_ angle: CGFloat) -> CGFloat {
     var angle = angle
     while angle > PI {
         angle -= 2 * PI
@@ -157,11 +157,11 @@ extension CGPoint
         }
     }
     
-    func distanceToPoint(point: CGPoint) -> CGFloat {
+    func distanceToPoint(_ point: CGPoint) -> CGFloat {
         return (point - self).length
     }
     
-    mutating func scale(s: CGFloat) {
+    mutating func scale(_ s: CGFloat) {
         x *= s
         y *= s
     }

@@ -9,34 +9,34 @@
 import Cocoa
 
 enum SelectionMode {
-    case Select, MoveSelected, MoveHandle
+    case select, moveSelected, moveHandle
 }
 
 extension Array
 {
-    func contains<T : Equatable>(obj: T) -> Bool {
+    func contains<T : Equatable>(_ obj: T) -> Bool {
         return self.filter({$0 as? T == obj}).count > 0
     }
 }
 
 class SelectTool: GraphicTool
 {
-    var mode: SelectionMode = SelectionMode.Select
+    var mode: SelectionMode = SelectionMode.select
     var selectedHandle = 0
     var selectOrigin = CGPoint(x: 0, y: 0)
     var selectedGraphic: Graphic?
     var restoreOnMove = false
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Select objects")
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         view.selection = []
         view.snapConstructions = []
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         if view.mouseClickCount == 2 {
             if view.selection.count == 1 {
                 let g = view.selection[0]
@@ -45,22 +45,22 @@ class SelectTool: GraphicTool
             }
         }
         let handleSize = view.scaleFloat(HSIZE)
-        mode = SelectionMode.Select
+        mode = SelectionMode.select
         restoreOnMove = false
         selectOrigin = location
         let radius = view.scaleFloat(SELECT_RADIUS)
         if let g = view.closestGraphicToPoint(location, within: radius) {
-            mode = SelectionMode.MoveSelected
+            mode = SelectionMode.moveSelected
             if view.selection.count == 0 || !view.selection.contains(g) {
                 view.selection = [g]
-                view.setNeedsDisplayInRect(view.bounds)
+                view.setNeedsDisplay(view.bounds)
             } else if view.selection.count == 1 {
                 for i in 0 ..< g.points.count {
                     let p = g.points[i]
                     if p.distanceToPoint(location) < handleSize {
                         selectedGraphic = g
                         selectedHandle = i
-                        mode = SelectionMode.MoveHandle
+                        mode = SelectionMode.moveHandle
                         g.addReshapeSnapConstructionsAtPoint(p, toView: view)
                         break
                     }
@@ -70,71 +70,71 @@ class SelectTool: GraphicTool
         }
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView)
+    override func mouseDragged(_ location: CGPoint, view: DrawingView)
     {
         let handleSize = view.scaleFloat(HSIZE)
         
         switch mode {
-        case SelectionMode.Select:
+        case SelectionMode.select:
             view.selectionRect = rectContainingPoints([selectOrigin, location])
             view.selectObjectsInRect(view.selectionRect)
             view.needsDisplay = true
             
-        case SelectionMode.MoveSelected:
+        case SelectionMode.moveSelected:
             let delta = location - selectOrigin
             selectOrigin = location
             for g in view.selection {
-                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -handleSize, -handleSize))
+                view.setNeedsDisplay(NSInsetRect(g.bounds, -handleSize, -handleSize))
                 moveGraphic(g, byVector: delta, inView: view)
-                view.setNeedsDisplayInRect(NSInsetRect(g.bounds, -handleSize, -handleSize))
+                view.setNeedsDisplay(NSInsetRect(g.bounds, -handleSize, -handleSize))
             }
             
-        case SelectionMode.MoveHandle:
+        case SelectionMode.moveHandle:
             if let graphic = selectedGraphic {
-                view.setNeedsDisplayInRect(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
+                view.setNeedsDisplay(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
                 setPoint(location, atIndex: selectedHandle, forGraphic: graphic, inView: view)
-                view.setNeedsDisplayInRect(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
+                view.setNeedsDisplay(graphic.bounds.insetBy(dx: -handleSize, dy: -handleSize))
             }
         }
         restoreOnMove = false
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.removeSnapConstructionsForReference(selectedGraphic)
-        if mode == SelectionMode.Select {
+        if mode == SelectionMode.select {
             view.selectionRect = CGRect(x: 0, y: 0, width: 0, height: 0)
             view.selectObjectsInRect(rectContainingPoints([selectOrigin, location]))
-            view.setNeedsDisplayInRect(view.bounds)
+            view.setNeedsDisplay(view.bounds)
         }
     }
     
-    func moveGraphic(graphic: Graphic, toPoint point: CGPoint, inView view: DrawingView) {
+    func moveGraphic(_ graphic: Graphic, toPoint point: CGPoint, inView view: DrawingView) {
         let handleSize = view.scaleFloat(HSIZE)
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
-        view.undoManager?.prepareWithInvocationTarget(self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
+        view.setNeedsDisplay(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
+        view.undoManager?.prepare(withInvocationTarget: self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
         graphic.moveOriginTo(point)
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
+        view.setNeedsDisplay(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
     }
     
-    func moveGraphic(graphic: Graphic, byVector vector: CGPoint, inView view: DrawingView) {
+    func moveGraphic(_ graphic: Graphic, byVector vector: CGPoint, inView view: DrawingView) {
         if restoreOnMove {
-            view.undoManager?.prepareWithInvocationTarget(self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
+            view.undoManager?.prepare(withInvocationTarget: self).moveGraphic(graphic, toPoint: graphic.origin, inView: view)
         }
         graphic.moveOriginBy(vector)
     }
     
-    func setPoint(point: CGPoint, atIndex index: Int, forGraphic graphic: Graphic, inView view: DrawingView)
+    func setPoint(_ point: CGPoint, atIndex index: Int, forGraphic graphic: Graphic, inView view: DrawingView)
     {
         let handleSize = view.scaleFloat(HSIZE)
         if restoreOnMove {
             let oldLocation = graphic.points[index]
-            view.undoManager?.prepareWithInvocationTarget(self).setPoint(oldLocation, atIndex: index, forGraphic: graphic, inView: view)
+            view.undoManager?.prepare(withInvocationTarget: self).setPoint(oldLocation, atIndex: index, forGraphic: graphic, inView: view)
         }
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
+        view.setNeedsDisplay(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
         graphic.setPoint(point, atIndex: index)
-        view.setNeedsDisplayInRect(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
+        view.setNeedsDisplay(NSInsetRect(graphic.bounds, -handleSize, -handleSize))
     }
 }

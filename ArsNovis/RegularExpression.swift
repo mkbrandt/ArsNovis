@@ -17,33 +17,33 @@ class RegularExpression
     
     init(pattern: String, maxMatches: Int = 20) {
         regcomp(&re, pattern, REG_EXTENDED)
-        pm = [regmatch_t](count: maxMatches, repeatedValue: regmatch_t())
+        pm = [regmatch_t](repeating: regmatch_t(), count: maxMatches)
         self.maxMatches = maxMatches
     }
     
-    func matchesWithString(s: String) -> Bool {
+    func matchesWithString(_ s: String) -> Bool {
         let status = Int(regexec(&re, s, maxMatches, &pm, 0))
         matchedString = s
         return status == 0
     }
     
-    func substring(so: regoff_t, _ eo: regoff_t) -> String {
+    func substring(_ so: regoff_t, _ eo: regoff_t) -> String {
         if eo == so {
             return ""
         }
         var start = matchedString.characters.startIndex
         for _ in 0 ..< so {
-            start = start.successor()
+            start = matchedString.characters.index(after: start)
         }
         var end = start
         for _ in 0 ..< eo - so - 1 {
-            end = end.successor()
+            end = matchedString.characters.index(after: end)
         }
         let s = matchedString[start...end]
         return s
     }
     
-    func match(n: Int) -> String? {
+    func match(_ n: Int) -> String? {
         if n > maxMatches {
             return nil
         }
@@ -62,7 +62,7 @@ class RegularExpression
     }
     
     var suffix: String {
-        let endIndex = regoff_t(matchedString.lengthOfBytesUsingEncoding(NSUTF8StringEncoding))
+        let endIndex = regoff_t(matchedString.lengthOfBytes(using: String.Encoding.utf8))
         return substring(pm[0].rm_eo, endIndex)
     }
 }

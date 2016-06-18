@@ -10,7 +10,7 @@ import Cocoa
 
 class TrimToTool: GraphicTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         if view.selection.count == 0 {
             view.setDrawingHint("Hold control and select trim barriers")
         } else {
@@ -18,12 +18,12 @@ class TrimToTool: GraphicTool
         }
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         view.selection = []
         view.construction = nil
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         if view.controlKeyDown {
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 if view.selection.contains(g) {
@@ -37,11 +37,11 @@ class TrimToTool: GraphicTool
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 let trimGroup = GroupGraphic(contents: view.selection)
                 var intersections = trimGroup.intersectionsWithGraphic(g, extendSelf: false, extendOther: true)
-                intersections = intersections.sort { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
+                intersections = intersections.sorted { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
                 if intersections.count > 0 {
                     let trimLocation = intersections[0]
                     
-                    let gs = g.divideAtPoint(trimLocation).sort { $0.distanceToPoint(location) < $1.distanceToPoint(location) }
+                    let gs = g.divideAtPoint(trimLocation).sorted { $0.distanceToPoint(location) < $1.distanceToPoint(location) }
                     view.deleteGraphic(g)
                     view.addGraphic(gs[0])
                     view.construction = nil
@@ -51,16 +51,16 @@ class TrimToTool: GraphicTool
         }
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
         if view.selection.count > 0 {
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 let trimGroup = GroupGraphic(contents: view.selection)
                 var intersections = trimGroup.intersectionsWithGraphic(g, extendSelf: false, extendOther: true)
-                intersections = intersections.sort { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
+                intersections = intersections.sorted { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
                 if intersections.count > 0 {
                     let trimLocation = intersections[0]
                     let visualCue = Graphic(origin: trimLocation)
-                    visualCue.fillColor = NSColor.redColor()
+                    visualCue.fillColor = NSColor.red()
                     view.construction = visualCue
                 }
             }
@@ -70,7 +70,7 @@ class TrimToTool: GraphicTool
 
 class TrimFromTool: TrimToTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         if view.selection.count == 0 {
             view.setDrawingHint("Hold control and select trim barriers")
         } else {
@@ -78,7 +78,7 @@ class TrimFromTool: TrimToTool
         }
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         if view.controlKeyDown {
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 if view.selection.contains(g) {
@@ -92,11 +92,11 @@ class TrimFromTool: TrimToTool
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 let trimGroup = GroupGraphic(contents: view.selection)
                 var intersections = trimGroup.intersectionsWithGraphic(g, extendSelf: false, extendOther: false)
-                intersections = intersections.sort { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
+                intersections = intersections.sorted { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
                 if intersections.count > 0 {
                     let trimLocation = intersections[0]
                     
-                    let gs = g.divideAtPoint(trimLocation).sort { $0.distanceToPoint(location) > $1.distanceToPoint(location) }
+                    let gs = g.divideAtPoint(trimLocation).sorted { $0.distanceToPoint(location) > $1.distanceToPoint(location) }
                     view.deleteGraphic(g)
                     view.addGraphic(gs[0])
                     view.construction = nil
@@ -109,7 +109,7 @@ class TrimFromTool: TrimToTool
 
 class BreakAtTool: TrimToTool
 {
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         if view.selection.count == 0 {
             view.setDrawingHint("Hold control and select trim barriers")
         } else {
@@ -117,7 +117,7 @@ class BreakAtTool: TrimToTool
         }
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         if view.controlKeyDown {
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 if view.selection.contains(g) {
@@ -131,11 +131,11 @@ class BreakAtTool: TrimToTool
             if let g = view.closestGraphicToPoint(location, within: SnapRadius) {
                 let trimGroup = GroupGraphic(contents: view.selection)
                 var intersections = trimGroup.intersectionsWithGraphic(g, extendSelf: false, extendOther: false)
-                intersections = intersections.sort { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
+                intersections = intersections.sorted { return $0.distanceToPoint(location) < $1.distanceToPoint(location) }
                 if intersections.count > 0 {
                     let trimLocation = intersections[0]
                     
-                    let gs = g.divideAtPoint(trimLocation).sort { $0.distanceToPoint(location) > $1.distanceToPoint(location) }
+                    let gs = g.divideAtPoint(trimLocation).sorted { $0.distanceToPoint(location) > $1.distanceToPoint(location) }
                     view.deleteGraphic(g)
                     view.addGraphics(gs)
                     view.selection = gs
@@ -152,27 +152,27 @@ class JoinTool: GraphicTool
     var primary: Graphic?
     var startLoc = CGPoint()
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Join Tool: Click and drag between two endpoints to join")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
         primary = view.closestGraphicToPoint(location, within: SnapRadius)
         startLoc = location
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
         if primary != nil {
             view.redrawConstruction()
             let lg = LineGraphic(origin: startLoc, endPoint: location)
             lg.lineWidth = 0
-            lg.lineColor = NSColor.redColor()
+            lg.lineColor = NSColor.red()
             view.construction = lg
             view.redrawConstruction()
         }
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         view.construction = nil
         if let primary = primary {

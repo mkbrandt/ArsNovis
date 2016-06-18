@@ -39,7 +39,7 @@ class ZoomView: NSView
     
     var fullVisibleRect: CGRect {
         if let superview = superview {
-            return convertRect(superview.bounds, fromView: superview)
+            return convert(superview.bounds, from: superview)
         }
         return visibleRect
     }
@@ -64,19 +64,19 @@ class ZoomView: NSView
         return fixedSize
     }
     
-    @IBAction func zoomIn(sender: NSObject) {
+    @IBAction func zoomIn(_ sender: NSObject) {
         zoomByFactor(2.0)
     }
     
-    @IBAction func zoomOut(sender: NSObject) {
+    @IBAction func zoomOut(_ sender: NSObject) {
         zoomByFactor(0.5)
     }
     
-    @IBAction func zoomActualSize(sender: NSObject) {
+    @IBAction func zoomActualSize(_ sender: NSObject) {
         zoomToAbsoluteScale(1.0)
     }
     
-    @IBAction func zoomToFit(sender: NSObject) {
+    @IBAction func zoomToFit(_ sender: NSObject) {
         if let pageRect = pageRect {
             zoomToFitRect(pageRect)
         } else {
@@ -84,26 +84,26 @@ class ZoomView: NSView
         }
     }
     
-    func zoomByFactor(factor: CGFloat) {
+    func zoomByFactor(_ factor: CGFloat) {
         zoomByFactor(factor, aroundPoint: centeredPointInDocView)
     }
     
-    func zoomToAbsoluteScale(scale: CGFloat) {
+    func zoomToAbsoluteScale(_ scale: CGFloat) {
         let factor = scale / self.scale
         zoomByFactor(factor)
     }
     
-    func zoomToFitRect(rect: CGRect) {
+    func zoomToFitRect(_ rect: CGRect) {
         let sx = fullVisibleRect.size.width / rect.size.width
         let sy = fullVisibleRect.size.height / rect.size.height
         zoomByFactor(min(sx, sy))
-        scrollRectToVisible(rect)
+        scrollToVisible(rect)
     }
     
-    override func scrollWheel(theEvent: NSEvent) {
-        if theEvent.modifierFlags.contains(.ControlKeyMask) {
+    override func scrollWheel(_ theEvent: NSEvent) {
+        if theEvent.modifierFlags.contains(.control) {
             let factor: CGFloat = 1.0 - theEvent.deltaY * 0.04
-            var mouseloc = convertPoint(theEvent.locationInWindow, fromView: nil)
+            var mouseloc = convert(theEvent.locationInWindow, from: nil)
             
             if let zc = zoomCenter {
                 mouseloc = zc
@@ -120,7 +120,7 @@ class ZoomView: NSView
         zoomByFactor(0.5)
     }
     
-    func zoomByFactor(factor: CGFloat, aroundPoint point: CGPoint) {
+    func zoomByFactor(_ factor: CGFloat, aroundPoint point: CGPoint) {
         var factor = factor
         if factor != 1.0 {
             var newScale = factor * scale
@@ -173,8 +173,8 @@ class ZoomView: NSView
                 invalidateIntrinsicContentSize()
                 frame = newFrame
                 bounds = newBounds
-                scrollRectToVisible(newVisibleRect)
-               setNeedsDisplayInRect(bounds)
+                scrollToVisible(newVisibleRect)
+               setNeedsDisplay(bounds)
             }
            // Swift.print("  scale is \(scale)\n  bounds is \(bounds)\n  frame is \(frame)")
         }
@@ -185,21 +185,21 @@ class ZoomView: NSView
         zoomByFactor(0.1)
     }
     
-    func scrollPointToCenter(center: CGPoint) {
+    func scrollPointToCenter(_ center: CGPoint) {
         var rect = visibleRect
         rect.origin = CGPoint(x: center.x - rect.size.width / 2, y: center.y - rect.size.height / 2)
-        scrollRectToVisible(rect)
+        scrollToVisible(rect)
     }
     
-    override func drawRect(dirtyRect: NSRect) {
-        let context = NSGraphicsContext.currentContext()?.CGContext
+    override func draw(_ dirtyRect: NSRect) {
+        let context = NSGraphicsContext.current()?.cgContext
         
-        CGContextSaveGState(context)
-        CGContextSetLineWidth(context, 8.0)
-        NSColor.redColor().set()
-        CGContextStrokeRect(context, lastVisibleRect)
-        NSColor.blueColor().set()
-        CGContextStrokeRect(context, previousVisibleRect)
-        CGContextRestoreGState(context)
+        context?.saveGState()
+        context?.setLineWidth(8.0)
+        NSColor.red().set()
+        context?.stroke(lastVisibleRect)
+        NSColor.blue().set()
+        context?.stroke(previousVisibleRect)
+        context?.restoreGState()
     }
 }

@@ -20,7 +20,7 @@ class TextGraphic: Graphic, NSTextFieldDelegate
     var activeEditor: NSTextField?
     
     var font: NSFont {
-        get { return NSFont(name: fontName, size: fontSize) ?? NSFont.systemFontOfSize(fontSize) }
+        get { return NSFont(name: fontName, size: fontSize) ?? NSFont.systemFont(ofSize: fontSize) }
         set { fontName = newValue.fontName; fontSize = newValue.pointSize }
     }
     
@@ -29,9 +29,18 @@ class TextGraphic: Graphic, NSTextFieldDelegate
     override var bounds: CGRect                 { return renderedBounds ?? CGRect(origin: origin, size: CGSize(width: 100, height: 100)) }
     override var selected: Bool {
         didSet {
-            NSFontManager.sharedFontManager().setSelectedFont(font, isMultiple: false)
-            NSFontManager.sharedFontManager().setSelectedAttributes([NSForegroundColorAttributeName: lineColor], isMultiple: false)
+            NSFontManager.shared().setSelectedFont(font, isMultiple: false)
+            NSFontManager.shared().setSelectedAttributes([NSForegroundColorAttributeName: lineColor], isMultiple: false)
         }
+    }
+
+    override var inspectionName: String              { return "Text" }
+    override var inspectionInfo: [InspectionInfo] {
+        return super.inspectionInfo + [
+            InspectionInfo(label: "text", key: "text", type: .string),
+            InspectionInfo(label: "Font", key: "fontName", type: .string),
+            InspectionInfo(label: "Size", key: "fontSize", type: .float)
+        ]
     }
     
     init(origin: CGPoint, text: String, angle: CGFloat = 0) {
@@ -43,10 +52,10 @@ class TextGraphic: Graphic, NSTextFieldDelegate
     }
     
     required init?(coder decoder: NSCoder) {
-        angle = CGFloat(decoder.decodeDoubleForKey("angle"))
-        fontSize = CGFloat(decoder.decodeDoubleForKey("fontSize"))
-        text = decoder.decodeObjectForKey("text") as? String ?? "Text"
-        fontName = decoder.decodeObjectForKey("fontName") as? String ?? "Helvetica"
+        angle = CGFloat(decoder.decodeDouble(forKey: "angle"))
+        fontSize = CGFloat(decoder.decodeDouble(forKey: "fontSize"))
+        text = decoder.decodeObject(forKey: "text") as? String ?? "Text"
+        fontName = decoder.decodeObject(forKey: "fontName") as? String ?? "Helvetica"
         super.init(coder: decoder)
     }
     
@@ -54,39 +63,39 @@ class TextGraphic: Graphic, NSTextFieldDelegate
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        coder.encodeDouble(Double(angle), forKey: "angle")
-        coder.encodeDouble(Double(fontSize), forKey: "fontSize")
-        coder.encodeObject(text, forKey: "text")
-        coder.encodeObject(fontName, forKey: "fontName")
-        super.encodeWithCoder(coder)
+    override func encode(with coder: NSCoder) {
+        coder.encode(Double(angle), forKey: "angle")
+        coder.encode(Double(fontSize), forKey: "fontSize")
+        coder.encode(text, forKey: "text")
+        coder.encode(fontName, forKey: "fontName")
+        super.encode(with: coder)
     }
     
     override func recache() {
         cachedPath = nil
     }
     
-    override func drawInView(view: DrawingView) {
+    override func drawInView(_ view: DrawingView) {
         let scaledSize = view.scaleFloatToDrawing(fontSize)
-        let scaledFont = NSFont(name: fontName, size: scaledSize) ?? NSFont.systemFontOfSize(scaledSize)
+        let scaledFont = NSFont(name: fontName, size: scaledSize) ?? NSFont.systemFont(ofSize: scaledSize)
         let attributes: [String: AnyObject] = [NSFontAttributeName: scaledFont, NSForegroundColorAttributeName: lineColor]
         if angle == 0.0 {
-            text.drawAtPoint(origin, withAttributes: attributes)
+            text.draw(at: origin, withAttributes: attributes)
             if text == "" {
                 text = " "
             }
-            renderedBounds = CGRect(origin: origin, size: text.sizeWithAttributes(attributes))
+            renderedBounds = CGRect(origin: origin, size: text.size(withAttributes: attributes))
         } else {
             let context = view.context
-            CGContextSaveGState(context)
-            CGContextTranslateCTM(context, origin.x, origin.y)
-            CGContextRotateCTM(context, angle)
-            text.drawAtPoint(CGPoint(x: 0, y: 0), withAttributes: attributes)
-            let rsize = text.sizeWithAttributes(attributes)
+            context?.saveGState()
+            context?.translate(x: origin.x, y: origin.y)
+            context?.rotate(byAngle: angle)
+            text.draw(at: CGPoint(x: 0, y: 0), withAttributes: attributes)
+            let rsize = text.size(withAttributes: attributes)
             let gg = GroupGraphic(contents: RectGraphic(origin: origin, size: rsize).sides) // fixme: replace after changing rect to group
             gg.rotateAroundPoint(origin, angle: angle)
             renderedBounds = gg.bounds
-            CGContextRestoreGState(context)
+            context?.restoreGState()
        }
         if selected {
             drawHandlesInView(view)
@@ -94,14 +103,14 @@ class TextGraphic: Graphic, NSTextFieldDelegate
     }
     
     override var inspectionKeys: [String]   { return ["x", "y", "angle"] }
-    override func typeForKey(key: String) -> MeasurementType {
+    override func typeForKey(_ key: String) -> MeasurementType {
         if key == "angle" {
-            return .Angle
+            return .angle
         }
-        return .Distance
+        return .distance
     }
     
-    override func closestPointToPoint(point: CGPoint, extended: Bool) -> CGPoint {
+    override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
         if bounds.contains(point) {
             return point
         }
@@ -110,12 +119,20 @@ class TextGraphic: Graphic, NSTextFieldDelegate
         return p
     }
     
-    override func editDoubleClick(location: CGPoint, view: DrawingView) {
+    override func rotateAroundPoint(_ center: CGPoint, angle: CGFloat) {
+        var offset = origin - center
+        offset.angle += angle
+        self.angle += angle
+        self.angle = normalizeAngle(self.angle)
+        origin = center + offset
+    }
+    
+    override func editDoubleClick(_ location: CGPoint, view: DrawingView) {
         let extra: NSString = "_"
         let scaledSize = view.scaleFloatToDrawing(fontSize)
-        let scaledFont = NSFont(name: fontName, size: scaledSize) ?? NSFont.systemFontOfSize(scaledSize)
-        var size = text.sizeWithAttributes([NSFontAttributeName: scaledFont])
-        size.width += extra.sizeWithAttributes([NSFontAttributeName: scaledFont]).width
+        let scaledFont = NSFont(name: fontName, size: scaledSize) ?? NSFont.systemFont(ofSize: scaledSize)
+        var size = text.size(withAttributes: [NSFontAttributeName: scaledFont])
+        size.width += extra.size(withAttributes: [NSFontAttributeName: scaledFont]).width
         let editor = NSTextField(frame: CGRect(origin: origin, size: size))
         editor.font = scaledFont
         editor.delegate = self
@@ -125,20 +142,20 @@ class TextGraphic: Graphic, NSTextFieldDelegate
         editor.selectText(self)
     }
     
-    override func controlTextDidChange(obj: NSNotification) {
+    override func controlTextDidChange(_ obj: Notification) {
         if let editor = activeEditor {
             let extra: NSString = "_"
             text = editor.stringValue
-            var size = text.sizeWithAttributes([NSFontAttributeName: editor.font!])
-            size.width += extra.sizeWithAttributes([NSFontAttributeName: editor.font!]).width
+            var size = text.size(withAttributes: [NSFontAttributeName: editor.font!])
+            size.width += extra.size(withAttributes: [NSFontAttributeName: editor.font!]).width
             editor.frame.size = size
             if let view = editor.superview as? DrawingView {
-                view.setNeedsDisplayInRect(bounds)
+                view.setNeedsDisplay(bounds)
             }
         }
     }
     
-    override func controlTextDidEndEditing(obj: NSNotification) {
+    override func controlTextDidEndEditing(_ obj: Notification) {
         if let editor = activeEditor {
             self.text = editor.stringValue
             editor.delegate = nil
@@ -155,28 +172,28 @@ class TextGraphic: Graphic, NSTextFieldDelegate
 class TextTool: GraphicTool
 {
     override func cursor() -> NSCursor {
-        return NSCursor.IBeamCursor()
+        return NSCursor.iBeam()
     }
     
-    override func escape(view: DrawingView) {
+    override func escape(_ view: DrawingView) {
         view.construction = nil
         view.window?.makeFirstResponder(view)
     }
     
-    override func selectTool(view: DrawingView) {
+    override func selectTool(_ view: DrawingView) {
         view.setDrawingHint("Text: Select location to place text")
     }
     
-    override func mouseDown(location: CGPoint, view: DrawingView) {
+    override func mouseDown(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseMoved(location: CGPoint, view: DrawingView) {
+    override func mouseMoved(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseDragged(location: CGPoint, view: DrawingView) {
+    override func mouseDragged(_ location: CGPoint, view: DrawingView) {
     }
     
-    override func mouseUp(location: CGPoint, view: DrawingView) {
+    override func mouseUp(_ location: CGPoint, view: DrawingView) {
         view.redrawConstruction()
         let tg = TextGraphic(origin: location, text: "Text")
         tg.editDoubleClick(location, view: view)

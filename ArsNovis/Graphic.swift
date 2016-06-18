@@ -15,7 +15,7 @@ var SnapRadius = CGFloat(6.0)        // scaled by view when drawing
 
 enum SnapType
 {
-    case EndPoint, On, Center, Horizontal, Vertical, Angle, Align, Intersection, Grid
+    case endPoint, on, center, horizontal, vertical, angle, align, intersection, grid
 }
 
 struct SnapResult
@@ -24,23 +24,23 @@ struct SnapResult
     var type: SnapType
     var cursorText: NSString {
         switch type {
-        case .EndPoint:
+        case .endPoint:
             return "End"
-        case .On:
+        case .on:
             return "On"
-        case .Center:
+        case .center:
             return "Center"
-        case .Horizontal:
+        case .horizontal:
             return "H"
-        case .Vertical:
+        case .vertical:
             return "V"
-        case .Angle:
+        case .angle:
             return "45°"
-        case .Align:
+        case .align:
             return "Align"
-        case .Intersection:
+        case .intersection:
             return "Intersect"
-        case .Grid:
+        case .grid:
             return ""
         }
     }
@@ -57,8 +57,12 @@ func nextIdentifier() -> Int {
 
 class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
 {
-    var lineColor = NSColor.blackColor()
-    var fillColor: NSColor?
+    var lineColor = NSColor.black()
+    var _fillColor: NSColor?
+    var fillColor: NSColor {
+        get { return _fillColor ?? NSColor.clear() }
+        set { _fillColor = newValue.alphaComponent == 0 ? nil : newValue }
+    }
     var cachedPath: NSBezierPath?
     var selected = false             { didSet { cachedPath = nil }}
     var isActive = true
@@ -69,13 +73,13 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     var origin: CGPoint {
         willSet {
-            willChangeValueForKey("x")
-            willChangeValueForKey("y")
+            willChangeValue(forKey: "x")
+            willChangeValue(forKey: "y")
         }
         didSet {
             cachedPath = nil
-            didChangeValueForKey("x")
-            didChangeValueForKey("y")
+            didChangeValue(forKey: "x")
+            didChangeValue(forKey: "y")
         }
     }
     
@@ -127,22 +131,22 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     required init?(coder decoder: NSCoder)
     {
-        lineColor = decoder.decodeObjectForKey("lineColor") as! NSColor
-        fillColor = decoder.decodeObjectForKey("fillColor") as? NSColor
-        lineWidth = CGFloat(decoder.decodeDoubleForKey("lineWidth"))
-        origin = decoder.decodePointForKey("origin")
+        lineColor = decoder.decodeObject(forKey: "lineColor") as? NSColor ?? NSColor.black()
+        _fillColor = decoder.decodeObject(forKey: "fillColor") as? NSColor
+        lineWidth = CGFloat(decoder.decodeDouble(forKey: "lineWidth"))
+        origin = decoder.decodePoint(forKey: "origin")
         identifier = nextIdentifier()
         super.init()
     }
     
-    func encodeWithCoder(coder: NSCoder)
+    func encode(with coder: NSCoder)
     {
-        coder.encodeObject(lineColor, forKey: "lineColor")
-        if let color = fillColor {
-            coder.encodeObject(color, forKey: "fillColor")
+        coder.encode(lineColor, forKey: "lineColor")
+        if let color = _fillColor {
+            coder.encode(color, forKey: "fillColor")
         }
-        coder.encodeDouble(Double(lineWidth), forKey: "lineWidth")
-        coder.encodePoint(origin, forKey: "origin")
+        coder.encode(Double(lineWidth), forKey: "lineWidth")
+        coder.encode(origin, forKey: "origin")
     }
     
     /// Override unlink to do anything necessary to remove links to other graphics when deleting this one
@@ -156,27 +160,47 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return nil
     }
     
-    func writableTypesForPasteboard(pasteboard: NSPasteboard) -> [String]
+    func writableTypes(for pasteboard: NSPasteboard) -> [String]
     {
         return [ELGraphicUTI]
     }
     
-    class func readableTypesForPasteboard(pasteboard: NSPasteboard) -> [String]
+    class func readableTypes(for pasteboard: NSPasteboard) -> [String]
     {
         return [ELGraphicUTI]
     }
     
-    class func readingOptionsForType(type: String, pasteboard: NSPasteboard) -> NSPasteboardReadingOptions {
-        return NSPasteboardReadingOptions.AsKeyedArchive
+    class func readingOptions(forType type: String, pasteboard: NSPasteboard) -> NSPasteboardReadingOptions {
+        return NSPasteboardReadingOptions.asKeyedArchive
     }
     
-    func pasteboardPropertyListForType(type: String) -> AnyObject?
+    func pasteboardPropertyList(forType type: String) -> AnyObject?
     {
-        let data = NSKeyedArchiver.archivedDataWithRootObject(self)
+        let data = NSKeyedArchiver.archivedData(withRootObject: self)
         return data
     }
     
+    // Parametrics
+    
+    var parametricName: String              { return "G\(identifier)" }
+    var parametricInfo: [InspectionInfo] {
+        return [
+            InspectionInfo(label: "Origin", key: "origin", type: .point)
+        ]
+    }
+    
     // Inspection
+    
+    var inspectionName: String              { return "Object" }
+    var inspectionInfo: [InspectionInfo] {
+        return [
+            InspectionInfo(label: "Line Color", key: "lineColor", type: .color),
+            InspectionInfo(label: "Fill Color", key: "fillColor", type: .color),
+            InspectionInfo(label: "Line Width", key: "lineWidth", type: .float),
+            InspectionInfo(label: "X", key: "x", type: .distance),
+            InspectionInfo(label: "Y", key: "y", type: .distance)
+        ]
+    }
     
     var inspectionKeys: [String] {
         return ["x", "y"]
@@ -186,34 +210,43 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return "x"
     }
     
-    func typeForKey(key: String) -> MeasurementType {
-        return .Distance
+    func typeForKey(_ key: String) -> MeasurementType {
+        return .distance
     }
     
-    func transformerForKey(key: String) -> NSValueTransformer {
+    func inspectionTypeForKey(_ key: String) -> InspectionType {
+        for info in inspectionInfo {
+            if info.key == key {
+                return info.type
+            }
+        }
+        return .float
+    }
+    
+    func transformerForKey(_ key: String) -> ValueTransformer {
         switch typeForKey(key) {
-        case .Angle:
+        case .angle:
             return AngleTransformer()
-        case .Distance:
+        case .distance:
             return DistanceTransformer()
         }
     }
     
     /// Override to allow editing in the drawing view
     
-    func editDoubleClick(location: CGPoint, view: DrawingView) {
+    func editDoubleClick(_ location: CGPoint, view: DrawingView) {
     }
     
     // Graphic
     
-    func setPoint(point: CGPoint, atIndex index: Int)
+    func setPoint(_ point: CGPoint, atIndex index: Int)
     {
         if index == 0 {
             origin = point
         }
     }
     
-    func moveOriginBy(vector: CGPoint)
+    func moveOriginBy(_ vector: CGPoint)
     {
         let op = points
         
@@ -223,7 +256,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
-    func moveOriginTo(point: CGPoint)
+    func moveOriginTo(_ point: CGPoint)
     {
         let vector = point - origin
         moveOriginBy(vector)
@@ -237,7 +270,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return center / CGFloat(points.count)
     }
     
-    func rotateAroundPoint(center: CGPoint, angle: CGFloat) {
+    func rotateAroundPoint(_ center: CGPoint, angle: CGFloat) {
         var newPoints: [CGPoint] = []
         for i in 0 ..< points.count {
             var offset = points[i] - center
@@ -250,7 +283,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
-    func flipHorizontalAroundPoint(center: CGPoint) {
+    func flipHorizontalAroundPoint(_ center: CGPoint) {
         var newPoints: [CGPoint] = []
         for i in 0 ..< points.count {
             let offset = points[i].x - center.x
@@ -262,7 +295,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         }
     }
     
-    func flipVerticalAroundPoint(center: CGPoint) {
+    func flipVerticalAroundPoint(_ center: CGPoint) {
         var newPoints: [CGPoint] = []
         for i in 0 ..< points.count {
             let offset = points[i].y - center.y
@@ -282,23 +315,23 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     {
         cachedPath = NSBezierPath()
         cachedPath!.lineWidth = lineWidth
-        cachedPath!.appendBezierPathWithOvalInRect(CGRect(x: origin.x - SELECT_RADIUS / 2, y: origin.y - SELECT_RADIUS, width: SELECT_RADIUS, height: SELECT_RADIUS))
+        cachedPath!.appendOval(in: CGRect(x: origin.x - SELECT_RADIUS / 2, y: origin.y - SELECT_RADIUS, width: SELECT_RADIUS, height: SELECT_RADIUS))
     }
     
     /// Utility function to draw a filled point as a 4 pixel rect.
-    func drawPoint(point: CGPoint, size: CGFloat)
+    func drawPoint(_ point: CGPoint, size: CGFloat)
     {
         NSRectFill(CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size))
     }
     
-    func addObserverPoints(points: [CGPoint], color: NSColor?) {
+    func addObserverPoints(_ points: [CGPoint], color: NSColor) {
         if nestedGraphics == nil {
             nestedGraphics = []
         }
         nestedGraphics? += points.map { let g = Graphic(origin: $0); g.fillColor = color; return g }
     }
     
-    func drawHandlesInView(view: DrawingView) {
+    func drawHandlesInView(_ view: DrawingView) {
         let size = view.scaleFloat(HSIZE)
         
         for p in points {
@@ -310,14 +343,14 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     ///
     /// Draws the currently cached path.
     /// The default implementation should normally be sufficient. Override recache instead of drawing directly.
-    func drawInView(view: DrawingView)
+    func drawInView(_ view: DrawingView)
     {
         if cachedPath == nil
         {
             recache()
         }
         
-        if let fillColor = fillColor
+        if let fillColor = _fillColor
         {
             fillColor.set()
             cachedPath?.fill()
@@ -342,7 +375,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     ///
     /// - parameter rect: the selection rectangle
     /// - returns: true if any part of the graphic is within the rect
-    func shouldSelectInRect(rect: CGRect) -> Bool
+    func shouldSelectInRect(_ rect: CGRect) -> Bool
     {
         return NSIntersectsRect(rect, bounds)
     }
@@ -353,7 +386,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     /// - parameter extended: true if the graphic should be extended beyond its bounds. This means that a line
     ///    would be extended infinitely, an arc would be treated as a complete circle, etc.
     /// - returns: the closest point on the graphic to the reference point
-    func closestPointToPoint(point: CGPoint, extended: Bool = false) -> CGPoint
+    func closestPointToPoint(_ point: CGPoint, extended: Bool = false) -> CGPoint
     {
         if let bp = BezierGraphic(path: path) {
             return bp.closestPointToPoint(point, extended: extended)
@@ -367,43 +400,43 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     /// - parameter extended: true if the graphic should be extended beyond its bounds. This means that a line
     ///    would be extended infinitely, an arc would be treated as a complete circle, etc.
     /// - returns: the distance from the closest point on the graphic to the reference point
-    func distanceToPoint(point: CGPoint, extended: Bool = false) -> CGFloat
+    func distanceToPoint(_ point: CGPoint, extended: Bool = false) -> CGFloat
     {
         let p = closestPointToPoint(point, extended: extended)
         return p.distanceToPoint(point)
     }
     
-    func intersectsWithGraphic(g: Graphic) -> Bool {
+    func intersectsWithGraphic(_ g: Graphic) -> Bool {
         return intersectionsWithGraphic(g, extendSelf: false, extendOther: false).count > 0
     }
     
-    func simpleIntersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func simpleIntersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         if let bp = BezierGraphic(path: path) {
             return bp.intersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
         }
         return []
     }
     
-    func intersectionsWithGraphic(g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
+    func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
         return simpleIntersectionsWithGraphic(g, extendSelf: extendSelf, extendOther: extendOther)
     }
     
-    func closestIntersectionWithGraphic(g: Graphic, toPoint p: CGPoint) -> CGPoint? {
+    func closestIntersectionWithGraphic(_ g: Graphic, toPoint p: CGPoint) -> CGPoint? {
         let points = intersectionsWithGraphic(g, extendSelf: false, extendOther: false)
         
         if points.count == 0 {
             return nil
         } else {
-            return points.sort({ $0.distanceToPoint(p) < $1.distanceToPoint(p) })[0]
+            return points.sorted(isOrderedBefore: { $0.distanceToPoint(p) < $1.distanceToPoint(p) })[0]
         }
     }
     
     /// Snap the cursor to the graphic if within the SnapRadius
     
-    func snapCursor(location: CGPoint) -> SnapResult? {
+    func snapCursor(_ location: CGPoint) -> SnapResult? {
         for point in points {
             if point.distanceToPoint(location) < SnapRadius {
-                return SnapResult(location: point, type: .EndPoint)
+                return SnapResult(location: point, type: .endPoint)
             }
         }
         return nil
@@ -411,7 +444,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     /// Scale the graphic
     
-    func scalePoint(point: CGPoint, fromRect: CGRect, toRect: CGRect) -> CGPoint {
+    func scalePoint(_ point: CGPoint, fromRect: CGRect, toRect: CGRect) -> CGPoint {
         let hscale = toRect.size.width / fromRect.size.width
         let vscale = toRect.size.height / fromRect.size.height
         let offset = point - fromRect.origin
@@ -420,7 +453,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         return toRect.origin + scaledOffset
     }
     
-    func scaleFromRect(fromRect: CGRect, toRect: CGRect) {
+    func scaleFromRect(_ fromRect: CGRect, toRect: CGRect) {
         for i in 0 ..< points.count {
             let p = scalePoint(points[i], fromRect: fromRect, toRect: toRect)
             
@@ -430,17 +463,17 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     /// trim help
     
-    func divideAtPoint(point: CGPoint) -> [Graphic] {
+    func divideAtPoint(_ point: CGPoint) -> [Graphic] {
         return [self]
     }
     
-    func extendToIntersectionWith(g: Graphic, closeToPoint: CGPoint) -> Graphic {
+    func extendToIntersectionWith(_ g: Graphic, closeToPoint: CGPoint) -> Graphic {
         return self
     }
     
     /// resize snaps
     
-    func addReshapeSnapConstructionsAtPoint(point: CGPoint, toView: DrawingView) {
+    func addReshapeSnapConstructionsAtPoint(_ point: CGPoint, toView: DrawingView) {
     }
 }
 
@@ -451,16 +484,16 @@ class GraphicTool: NSObject
     // return the cursor that represents this tool
     func cursor() -> NSCursor
     {
-        return NSCursor.arrowCursor()
+        return NSCursor.arrow()
     }
     
     /// called when the tool is made the current tool
-    func selectTool(view: DrawingView)
+    func selectTool(_ view: DrawingView)
     {
     }
     
     // escape pressed - end any creation
-    func escape(view: DrawingView)
+    func escape(_ view: DrawingView)
     {
         view.selection = []
         view.snapConstructions = []
@@ -472,7 +505,7 @@ class GraphicTool: NSObject
     ///
     /// - parameter location: location within the drawing view
     /// - parameter view: the drawing view
-    func mouseDown(location: CGPoint, view: DrawingView)
+    func mouseDown(_ location: CGPoint, view: DrawingView)
     {
     }
     
@@ -480,7 +513,7 @@ class GraphicTool: NSObject
     ///
     /// - parameter location: location within the drawing view
     /// - parameter view: the drawing view
-    func mouseDragged(location: CGPoint, view: DrawingView)
+    func mouseDragged(_ location: CGPoint, view: DrawingView)
     {
     }
     
@@ -488,7 +521,7 @@ class GraphicTool: NSObject
     ///
     /// - parameter location: location within the drawing view
     /// - parameter view: the drawing view
-    func mouseMoved(location: CGPoint, view: DrawingView)
+    func mouseMoved(_ location: CGPoint, view: DrawingView)
     {
     }
     
@@ -499,7 +532,7 @@ class GraphicTool: NSObject
     ///
     /// - parameter location: location within the drawing view
     /// - parameter view: the drawing view
-    func mouseUp(location: CGPoint, view: DrawingView)
+    func mouseUp(_ location: CGPoint, view: DrawingView)
     {
         mouseDragged(location, view: view)
         view.addConstruction()

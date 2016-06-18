@@ -17,6 +17,15 @@ class GraphicSymbol: GroupGraphic
     
     override var description: String { return "Symbol \(name) with contents \(contents)" }
     
+    override var inspectionName: String              { return "Symbol - \(name)" }
+    override var inspectionInfo: [InspectionInfo] {
+        let info = super.inspectionInfo + [InspectionInfo(label: "Parametrics", key: "", type: .literal)]
+        let pinfo = parametricContext.variables.map {
+            return InspectionInfo(label: $0.name, key: $0.name, type: $0.measurementType == .angle ? .angle : .distance)
+        }
+        return info + pinfo
+    }
+    
     init(page: ArsPage) {
         self.name = page.name
         self.parametricContext = page.parametricContext
@@ -29,19 +38,19 @@ class GraphicSymbol: GroupGraphic
     }
 
     required init?(coder decoder: NSCoder) {
-        if let name = decoder.decodeObjectForKey("name") as? String {
+        if let name = decoder.decodeObject(forKey: "name") as? String {
             self.name = name
         }
-        if let parametrics = decoder.decodeObjectForKey("parametrics") as? ParametricContext {
+        if let parametrics = decoder.decodeObject(forKey: "parametrics") as? ParametricContext {
             self.parametricContext = parametrics
         }
         super.init(coder: decoder)
     }
     
-    override func encodeWithCoder(coder: NSCoder) {
-        super.encodeWithCoder(coder)
-        coder.encodeObject(name, forKey: "name")
-        coder.encodeObject(parametricContext, forKey: "parametrics")
+    override func encode(with coder: NSCoder) {
+        super.encode(with: coder)
+        coder.encode(name, forKey: "name")
+        coder.encode(parametricContext, forKey: "parametrics")
     }
 
     override var inspectionKeys: [String] {
@@ -55,11 +64,11 @@ class GraphicSymbol: GroupGraphic
         return super.defaultInspectionKey
     }
     
-    override func valueForUndefinedKey(key: String) -> AnyObject? {
-        return parametricContext.valueForUndefinedKey(key)
+    override func value(forUndefinedKey key: String) -> AnyObject? {
+        return parametricContext.value(forUndefinedKey: key)
     }
     
-    override func setValue(value: AnyObject?, forUndefinedKey key: String) {
+    override func setValue(_ value: AnyObject?, forUndefinedKey key: String) {
         parametricContext.setValue(value, forUndefinedKey: key)
     }
     
@@ -68,19 +77,19 @@ class GraphicSymbol: GroupGraphic
         parametricContext.suspendObservation()
     }
 
-    override func rotateAroundPoint(center: CGPoint, angle: CGFloat) {
+    override func rotateAroundPoint(_ center: CGPoint, angle: CGFloat) {
         parametricContext.suspendObservation()
         super.rotateAroundPoint(center, angle: angle)
         parametricContext.resumeObservation()
     }
     
-    override func flipVerticalAroundPoint(center: CGPoint) {
+    override func flipVerticalAroundPoint(_ center: CGPoint) {
         parametricContext.suspendObservation()
         super.flipVerticalAroundPoint(center)
         parametricContext.resumeObservation()
     }
     
-    override func flipHorizontalAroundPoint(center: CGPoint) {
+    override func flipHorizontalAroundPoint(_ center: CGPoint) {
         parametricContext.suspendObservation()
         super.flipHorizontalAroundPoint(center)
         parametricContext.resumeObservation()
@@ -101,26 +110,26 @@ class SymbolImager: DrawingView
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func drawRect(dirtyRect: CGRect) {
-        NSColor.whiteColor().set()
+    override func draw(_ dirtyRect: CGRect) {
+        NSColor.white().set()
         NSRectFill(dirtyRect)
-        context = NSGraphicsContext.currentContext()?.CGContext
+        context = NSGraphicsContext.current()?.cgContext
         scale = 1.0 / max(symbol.bounds.width / bounds.width, symbol.bounds.height / bounds.height)
         
-        CGContextSaveGState(context)
-        CGContextScaleCTM(context, scale, scale)
+        context.saveGState()
+        context.scale(x: scale, y: scale)
         symbol.drawInView(self)
-        CGContextRestoreGState(context)
+        context.restoreGState()
     }
     
-    func image(size: NSSize) -> NSImage {
+    func image(_ size: NSSize) -> NSImage {
         let width = Int(size.width)
         let height = Int(size.height)
         if let imageRep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
                                            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: NSDeviceRGBColorSpace,
                                            bitmapFormat: NSBitmapFormat(), bytesPerRow: 0, bitsPerPixel: 0) {
-            cacheDisplayInRect(bounds, toBitmapImageRep: imageRep)
-            return NSImage(CGImage: imageRep.CGImage!, size: size)
+            cacheDisplay(in: bounds, to: imageRep)
+            return NSImage(cgImage: imageRep.cgImage!, size: size)
         }
         return NSImage(size: size)
     }

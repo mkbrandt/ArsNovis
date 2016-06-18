@@ -38,6 +38,7 @@
 		7AC321961A72B75E00836590 /* SelectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC321951A72B75E00836590 /* SelectTool.swift */; };
 		7ACABEC21C7E6EC500BBEA93 /* ZoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */; };
 		7AEF043B1C81F000006CCF60 /* BezierGraphic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEF043A1C81F000006CCF60 /* BezierGraphic.swift */; };
+		7AF152991CC9481400451486 /* ParametricEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF152981CC9481400451486 /* ParametricEditor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +87,7 @@
 		7AC321951A72B75E00836590 /* SelectTool.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelectTool.swift; sourceTree = "<group>"; };
 		7ACABEC11C7E6EC500BBEA93 /* ZoomView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ZoomView.swift; sourceTree = "<group>"; };
 		7AEF043A1C81F000006CCF60 /* BezierGraphic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BezierGraphic.swift; sourceTree = "<group>"; };
+		7AF152981CC9481400451486 /* ParametricEditor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ParametricEditor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +141,7 @@
 				7AC3218F1A72B54200836590 /* Graphic.swift */,
 				7A9391D01A7AB390005493E6 /* GraphicInspector.swift */,
 				7A094D9B1CA2EA4000141FAE /* Parametrics.swift */,
+				7AF152981CC9481400451486 /* ParametricEditor.swift */,
 				7AC123FE1C90893A006EB23F /* Transformers.swift */,
 				7A3943461A70343500E1FD94 /* LineGraphic.swift */,
 				7A056E191CA05353006835ED /* WallGraphic.swift */,
@@ -233,15 +236,17 @@
 			attributes = {
 				LastSwiftMigration = 0720;
 				LastSwiftUpdateCheck = 0720;
-				LastUpgradeCheck = 0720;
+				LastUpgradeCheck = 0800;
 				ORGANIZATIONNAME = "WalkingDog Design";
 				TargetAttributes = {
 					7A39431E1A700FF700E1FD94 = {
 						CreatedOnToolsVersion = 6.1.1;
-						DevelopmentTeam = 3ET2CV6KFK;
+						DevelopmentTeam = 46W5TFUQVR;
+						LastSwiftMigration = 0800;
 					};
 					7A3943331A700FF700E1FD94 = {
 						CreatedOnToolsVersion = 6.1.1;
+						LastSwiftMigration = 0800;
 						TestTargetID = 7A39431E1A700FF700E1FD94;
 					};
 				};
@@ -294,6 +299,7 @@
 				7AEF043B1C81F000006CCF60 /* BezierGraphic.swift in Sources */,
 				7A1A49C31CC2A02800E723DA /* TextGraphic.swift in Sources */,
 				7AC321941A72B73100836590 /* ArcGraphic.swift in Sources */,
+				7AF152991CC9481400451486 /* ParametricEditor.swift in Sources */,
 				7AA606301C99ADD500933E34 /* GroupGraphic.swift in Sources */,
 				7AC123FD1C89FE8B006EB23F /* Dialogs.swift in Sources */,
 				7ACABEC21C7E6EC500BBEA93 /* ZoomView.swift in Sources */,
@@ -381,6 +387,7 @@
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -424,6 +431,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -441,13 +449,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ArsNovis/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -456,12 +466,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ArsNovis/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = "net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -482,6 +495,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ArsNovis.app/Contents/MacOS/ArsNovis";
 			};
 			name = Debug;
@@ -499,6 +513,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "net.walkingdog.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ArsNovis.app/Contents/MacOS/ArsNovis";
 			};
 			name = Release;
