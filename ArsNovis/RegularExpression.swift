@@ -31,13 +31,13 @@ class RegularExpression
         if eo == so {
             return ""
         }
-        var start = matchedString.characters.startIndex
+        var start = matchedString.startIndex
         for _ in 0 ..< so {
-            start = matchedString.characters.index(after: start)
+            start = matchedString.index(after: start)
         }
         var end = start
         for _ in 0 ..< eo - so - 1 {
-            end = matchedString.characters.index(after: end)
+            end = matchedString.index(after: end)
         }
         let s = matchedString[start...end]
         return s

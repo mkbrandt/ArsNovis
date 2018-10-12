@@ -247,8 +247,8 @@ class BezierGraphic: Graphic
     }
     
     override func drawHandlesInView(_ view: DrawingView) {
-        let blue = NSColor.blue()
-        let red = NSColor.red()
+        let blue = NSColor.blue
+        let red = NSColor.red
         let path = NSBezierPath()
         
         drawHandle(origin, color: blue, view: view)
@@ -262,7 +262,7 @@ class BezierGraphic: Graphic
             path.line(to: arc.endPoint)
         }
         path.lineWidth = view.scaleFloat(0.5)
-        NSColor.black().set()
+        NSColor.black.set()
         path.stroke()
     }
     
@@ -304,7 +304,7 @@ class BezierGraphic: Graphic
             points = self.points + points
         }
         
-        return points.sorted(isOrderedBefore: { return $0.distanceToPoint(point) < $1.distanceToPoint(point) })[0]
+        return points.sorted(by: { return $0.distanceToPoint(point) < $1.distanceToPoint(point) })[0]
     }
     
     override func intersectionsWithGraphic(_ g: Graphic, extendSelf: Bool, extendOther: Bool) -> [CGPoint] {
@@ -329,7 +329,7 @@ class BezierGraphic: Graphic
     override func snapCursor(_ location: CGPoint) -> SnapResult? {
         if origin.distanceToPoint(location) < SnapRadius {
             return SnapResult(location: origin, type: .endPoint)
-        } else if let ep = arcs.last?.endPoint where ep.distanceToPoint(location) < SnapRadius {
+        } else if let ep = arcs.last?.endPoint, ep.distanceToPoint(location) < SnapRadius {
             return SnapResult(location: ep, type: .endPoint)
         } else {
             let p = closestPointToPoint(location)
@@ -358,7 +358,7 @@ class BezierTool: GraphicTool
     var firstDrag = true
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshair()
+        return NSCursor.crosshair
     }
     
     override func selectTool(_ view: DrawingView) {

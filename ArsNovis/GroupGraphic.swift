@@ -82,8 +82,8 @@ class GroupGraphic: Graphic
             self.contents = contents
         }
     }
-
-    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+    
+    required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
         fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     

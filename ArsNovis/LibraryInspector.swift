@@ -34,7 +34,8 @@ class LibraryInspector: NSView, NSTableViewDataSource
             openPanel.beginSheetModal(for: window) { result in
                 let fileURLs = openPanel.urls
                 for url in fileURLs {
-                    if let lib = try? ArsDocument(contentsOf: url, ofType: "ars"), let libname = url.lastPathComponent {
+                    if let lib = try? ArsDocument(contentsOf: url, ofType: "ars") {
+                        let libname = url.lastPathComponent
                         self.libraries[libname] = lib
                         self.selector.addItem(withTitle: libname)
                         self.table.reloadData()
@@ -51,7 +52,7 @@ class LibraryInspector: NSView, NSTableViewDataSource
         return 0
     }
     
-    func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> AnyObject? {
+    func tableView(_ tableView: NSTableView, objectValueFor tableColumn: NSTableColumn?, row: Int) -> Any? {
         if let lib = selectedLibrary {
             if row < lib.pages.count {
                 return GraphicSymbol(page: lib.pages[row])
@@ -61,7 +62,7 @@ class LibraryInspector: NSView, NSTableViewDataSource
     }
     
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-        if let lib = selectedLibrary where row < lib.pages.count {
+        if let lib = selectedLibrary, row < lib.pages.count {
             return GraphicSymbol(page: lib.pages[row])
         }
         return nil

@@ -37,12 +37,12 @@ class RectGraphic: GroupGraphic
         super.init(coder: decoder)
     }
     
-    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
-        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
-    }
-    
     override func encode(with coder: NSCoder) {
         super.encode(with: coder)
+    }
+
+    required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
 }
 
@@ -75,13 +75,13 @@ class ElipseGraphic: Graphic
         super.init(origin: origin)
     }
     
-    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
-        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
-    }
-    
     required init?(coder decoder: NSCoder) {
         size = decoder.decodeSize(forKey: "size")
         super.init(coder: decoder)
+    }
+    
+    required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
     override func encode(with coder: NSCoder) {
@@ -118,7 +118,7 @@ class ElipseGraphic: Graphic
     }
     
     override func closestPointToPoint(_ point: CGPoint, extended: Bool) -> CGPoint {
-        let cp = points.reduce(origin, combine: { point.distanceToPoint($1) < point.distanceToPoint($0) ? $1 : $0 })
+        let cp = points.reduce(origin, { point.distanceToPoint($1) < point.distanceToPoint($0) ? $1 : $0 })
         let cp2 = super.closestPointToPoint(point)
         
         return cp.distanceToPoint(point) < cp2.distanceToPoint(point) ? cp : cp2
@@ -145,7 +145,7 @@ class RectTool: GraphicTool
     }
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshair()
+        return NSCursor.crosshair
     }
     
     override func selectTool(_ view: DrawingView) {
@@ -177,7 +177,7 @@ class CenterRectTool: GraphicTool
     }
 
     override func cursor() -> NSCursor {
-        return NSCursor.crosshair()
+        return NSCursor.crosshair
     }
     
     override func selectTool(_ view: DrawingView) {

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-let ELGraphicUTI = "graphic.walkingdog.com"
+let ELGraphicUTI = NSPasteboard.PasteboardType("graphic.walkingdog.com")
 
 var RawSnapRadius = CGFloat(6.0)
 var SnapRadius = CGFloat(6.0)        // scaled by view when drawing
@@ -57,10 +57,10 @@ func nextIdentifier() -> Int {
 
 class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
 {
-    var lineColor = NSColor.black()
+    var lineColor = NSColor.black
     var _fillColor: NSColor?
     var fillColor: NSColor {
-        get { return _fillColor ?? NSColor.clear() }
+        get { return _fillColor ?? NSColor.clear }
         set { _fillColor = newValue.alphaComponent == 0 ? nil : newValue }
     }
     var cachedPath: NSBezierPath?
@@ -131,7 +131,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     required init?(coder decoder: NSCoder)
     {
-        lineColor = decoder.decodeObject(forKey: "lineColor") as? NSColor ?? NSColor.black()
+        lineColor = decoder.decodeObject(forKey: "lineColor") as? NSColor ?? NSColor.black
         _fillColor = decoder.decodeObject(forKey: "fillColor") as? NSColor
         lineWidth = CGFloat(decoder.decodeDouble(forKey: "lineWidth"))
         origin = decoder.decodePoint(forKey: "origin")
@@ -156,28 +156,25 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     
     // Pasteboard
     
-    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
+    required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
         return nil
     }
     
-    func writableTypes(for pasteboard: NSPasteboard) -> [String]
-    {
+    func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
         return [ELGraphicUTI]
     }
     
-    class func readableTypes(for pasteboard: NSPasteboard) -> [String]
-    {
+    class func readableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
         return [ELGraphicUTI]
     }
     
-    class func readingOptions(forType type: String, pasteboard: NSPasteboard) -> NSPasteboardReadingOptions {
-        return NSPasteboardReadingOptions.asKeyedArchive
+    class func readingOptions(forType type: NSPasteboard.PasteboardType, pasteboard: NSPasteboard) -> NSPasteboard.ReadingOptions {
+        return NSPasteboard.ReadingOptions.asKeyedArchive
     }
     
-    func pasteboardPropertyList(forType type: String) -> AnyObject?
-    {
+    func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
         let data = NSKeyedArchiver.archivedData(withRootObject: self)
-        return data
+        return data as AnyObject
     }
     
     // Parametrics
@@ -321,7 +318,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
     /// Utility function to draw a filled point as a 4 pixel rect.
     func drawPoint(_ point: CGPoint, size: CGFloat)
     {
-        NSRectFill(CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size))
+        CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size).fill()
     }
     
     func addObserverPoints(_ points: [CGPoint], color: NSColor) {
@@ -427,7 +424,7 @@ class Graphic: NSObject, NSCoding, NSPasteboardWriting, NSPasteboardReading
         if points.count == 0 {
             return nil
         } else {
-            return points.sorted(isOrderedBefore: { $0.distanceToPoint(p) < $1.distanceToPoint(p) })[0]
+            return points.sorted(by: { $0.distanceToPoint(p) < $1.distanceToPoint(p) })[0]
         }
     }
     
@@ -484,7 +481,7 @@ class GraphicTool: NSObject
     // return the cursor that represents this tool
     func cursor() -> NSCursor
     {
-        return NSCursor.arrow()
+        return NSCursor.arrow
     }
     
     /// called when the tool is made the current tool

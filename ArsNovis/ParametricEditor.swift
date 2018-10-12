@@ -8,7 +8,7 @@
 
 import Cocoa
 
-let ParametricItemUTI = "com.walkingdog.arsnovis.parametric"
+let ParametricItemUTI = NSPasteboard.PasteboardType("com.walkingdog.arsnovis.parametric")
 
 class ParametricEquationEditor: NSView, NSDraggingSource
 {
@@ -18,12 +18,12 @@ class ParametricEquationEditor: NSView, NSDraggingSource
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        register(forDraggedTypes: [ParametricItemUTI])
+        registerForDraggedTypes([ParametricItemUTI])
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        register(forDraggedTypes: [ParametricItemUTI])
+        registerForDraggedTypes([ParametricItemUTI])
     }
     
     var drawnSize: NSSize?
@@ -79,7 +79,7 @@ class ParametricEquationEditor: NSView, NSDraggingSource
         return equation?.itemAtPoint(point)
     }
     
-    override func mouseDown(_ theEvent: NSEvent) {
+    override func mouseDown(with theEvent: NSEvent) {
         let location = convert(theEvent.locationInWindow, from: nil)
         
         if let item = equation?.itemAtPoint(location) {
@@ -98,13 +98,13 @@ class ParametricEquationEditor: NSView, NSDraggingSource
         }
     }
     
-    override func mouseMoved(_ theEvent: NSEvent) {
+    override func mouseMoved(with theEvent: NSEvent) {
     }
     
-    override func mouseDragged(_ theEvent: NSEvent) {
+    override func mouseDragged(with theEvent: NSEvent) {
     }
 
-    override func mouseUp(_ theEvent: NSEvent) {
+    override func mouseUp(with theEvent: NSEvent) {
     }
     
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
@@ -140,7 +140,7 @@ class ParametricEditorTableCellView: NSTableCellView
 {
     @IBOutlet var editor: ParametricEquationEditor!
     
-    override var objectValue: AnyObject? {
+    override var objectValue: Any? {
         didSet {
             editor.equation = objectValue as? ParametricOperation
         }
@@ -190,7 +190,7 @@ class ParametricItemView: ParametricEquationEditor
     
     override func draw(_ dirtyRect: NSRect) {
         let RADIUS: CGFloat = 8.0
-        NSColor.black().withAlphaComponent(0.4).set()
+        NSColor.black.withAlphaComponent(0.4).set()
         let path = NSBezierPath()
         path.move(to: CGPoint(x: bounds.origin.x, y: bounds.origin.y + RADIUS))
         path.line(to: CGPoint(x: bounds.origin.x, y: bounds.origin.y + bounds.size.height))
@@ -217,13 +217,13 @@ class TitleBarView: NSView
     var buttonRect = CGRect()
     
     override func draw(_ dirtyRect: NSRect) {
-        let context = NSGraphicsContext.current()?.cgContext
+        let context = NSGraphicsContext.current?.cgContext
         context?.saveGState()
         
         let TITLE_HEIGHT: CGFloat = 20
         let RADIUS: CGFloat = 8
         let top = bounds.origin + CGPoint(x: 0, y: bounds.size.height - TITLE_HEIGHT)
-        NSColor.black().withAlphaComponent(0.6).set()
+        NSColor.black.withAlphaComponent(0.6).set()
         var path = NSBezierPath()
         path.move(to: top)
         path.line(to: CGPoint(x: top.x, y: top.y + TITLE_HEIGHT - RADIUS))
@@ -233,7 +233,7 @@ class TitleBarView: NSView
         path.line(to: CGPoint(x: top.x + bounds.size.width, y: top.y))
         path.line(to: top)
         path.fill()
-        NSColor.black().withAlphaComponent(0.8).set()
+        NSColor.black.withAlphaComponent(0.8).set()
         path.lineWidth = 0.5
         path.stroke()
         
@@ -244,7 +244,7 @@ class TitleBarView: NSView
         let title = AttributedString(string: "Parametrics", attributes: [NSForegroundColorAttributeName: NSColor.white().withAlphaComponent(0.5)])
         let w = title.size().width
         title.draw(at: top + CGPoint(x: (bounds.size.width - w) / 2, y: 3))
-        NSColor.white().withAlphaComponent(0.5).set()
+        NSColor.white.withAlphaComponent(0.5).set()
         path.setClip()
         NSBezierPath.setDefaultLineWidth(0.5)
         NSBezierPath.strokeLine(from: buttonRect.origin, to: buttonRect.topRight)
@@ -253,7 +253,7 @@ class TitleBarView: NSView
         context?.restoreGState()
     }
     
-    override func mouseDown(_ theEvent: NSEvent) {
+    override func mouseDown(with theEvent: NSEvent) {
         let location = convert(theEvent.locationInWindow, from: nil)
 
         if buttonRect.contains(location) {

@@ -443,12 +443,12 @@ class DrawingView: ZoomView, ParametricContextDelegate
             path.line(to: p - 3 * (xx + yy))
             path.move(to: p - (xx - yy))
             path.line(to: p - 3 * (xx - yy))
-            NSColor.black().set()
+            NSColor.black.set()
             path.lineWidth = scaleFloat(1)
             path.stroke()
             let fsize = scaleFloat(12)
             let textFont = NSFont.systemFont(ofSize: fsize)
-            snap.cursorText.draw(at: p + xx + yy, withAttributes: [NSFontAttributeName: textFont])
+            snap.cursorText.draw(at: p + xx + yy, withAttributes: [NSAttributedStringKey.font: textFont])
         }
     }
     
@@ -502,7 +502,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
             }
         }
         
-        if let snap = result where snap.type == .on || snap.type == .align {
+        if let snap = result, snap.type == .on || snap.type == .align {
             for i in 0 ..< snappedObjects.count {
                 let a = snappedObjects.remove(at: i)
                 for b in snappedObjects {
@@ -568,7 +568,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
     
     var mouseClickCount = 0
     
-    override func mouseDown(_ theEvent: NSEvent)
+    override func mouseDown(with theEvent: NSEvent)
     {
         var p = convert(theEvent.locationInWindow, from: nil)
         
@@ -581,7 +581,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         tool.mouseDown(p, view: self)
     }
     
-    override func mouseDragged(_ theEvent: NSEvent)
+    override func mouseDragged(with theEvent: NSEvent)
     {
         var p = convert(theEvent.locationInWindow, from: nil)
         
@@ -594,7 +594,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         tool.mouseDragged(p, view: self)
     }
     
-    override func mouseMoved(_ theEvent: NSEvent)
+    override func mouseMoved(with theEvent: NSEvent)
     {
         var p = convert(theEvent.locationInWindow, from: nil)
         
@@ -609,7 +609,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
         self.needsDisplay = true
     }
     
-    override func mouseUp(_ theEvent: NSEvent)
+    override func mouseUp(with theEvent: NSEvent)
     {
         var p = convert(theEvent.locationInWindow, from: nil)
         
@@ -622,17 +622,17 @@ class DrawingView: ZoomView, ParametricContextDelegate
         tool.mouseUp(p, view: self)
     }
     
-    override func mouseEntered(_ theEvent: NSEvent)
+    override func mouseEntered(with theEvent: NSEvent)
     {
         window!.makeFirstResponder(self)
     }
     
-    override func mouseExited(_ theEvent: NSEvent)
+    override func mouseExited(with theEvent: NSEvent)
     {
         //tool.cursor().pop()
     }
     
-    override func rightMouseDown(_ theEvent: NSEvent) {
+    override func rightMouseDown(with theEvent: NSEvent) {
         let p = convert(theEvent.locationInWindow, from: nil)
         let fr = window?.convertToScreen(CGRect(origin: theEvent.locationInWindow, size: CGSize(width: 200, height: 200)))
         
@@ -640,7 +640,7 @@ class DrawingView: ZoomView, ParametricContextDelegate
             parametricItemView.graphic = g
             parametricItemView.window?.setFrameOrigin(fr!.origin)
             if let window = parametricItemView.window {
-                window.backgroundColor = NSColor.clear()
+                window.backgroundColor = NSColor.clear
                 window.isOpaque = false
                 window.styleMask = NSBorderlessWindowMask
                 window.setFrameOrigin(fr!.origin)

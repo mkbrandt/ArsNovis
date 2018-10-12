@@ -100,8 +100,8 @@ class ZoomView: NSView
         scrollToVisible(rect)
     }
     
-    override func scrollWheel(_ theEvent: NSEvent) {
-        if theEvent.modifierFlags.contains(.control) {
+    override func scrollWheel(with theEvent: NSEvent) {
+        if theEvent.modifierFlags.contains(NSEvent.ModifierFlags.control) {
             let factor: CGFloat = 1.0 - theEvent.deltaY * 0.04
             var mouseloc = convert(theEvent.locationInWindow, from: nil)
             
@@ -111,7 +111,7 @@ class ZoomView: NSView
             
             zoomByFactor(factor, aroundPoint: mouseloc)
         } else {
-            super.scrollWheel(theEvent)
+            super.scrollWheel(with: theEvent)
         }
     }
     
@@ -153,7 +153,7 @@ class ZoomView: NSView
                 }
                 //Swift.print("  new bounds = \(newBounds)")
                 var newFrame = CGRect(x: 0, y: 0, width: newBounds.size.width * scale, height: newBounds.size.height * scale)
-                if let superview = superview where constrainViewToSuperview {
+                if let superview = superview, constrainViewToSuperview {
                     var sy: CGFloat = 1.0
                     var sx: CGFloat = 1.0
                     if newFrame.size.height < superview.bounds.size.height {
@@ -192,13 +192,13 @@ class ZoomView: NSView
     }
     
     override func draw(_ dirtyRect: NSRect) {
-        let context = NSGraphicsContext.current()?.cgContext
+        let context = NSGraphicsContext.current?.cgContext
         
         context?.saveGState()
         context?.setLineWidth(8.0)
-        NSColor.red().set()
+        NSColor.red.set()
         context?.stroke(lastVisibleRect)
-        NSColor.blue().set()
+        NSColor.blue.set()
         context?.stroke(previousVisibleRect)
         context?.restoreGState()
     }

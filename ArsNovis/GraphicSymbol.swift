@@ -29,12 +29,8 @@ class GraphicSymbol: GroupGraphic
     init(page: ArsPage) {
         self.name = page.name
         self.parametricContext = page.parametricContext
-        super.init(contents: page.layers.reduce([], combine: { return $0 + $1.contents }))      // all layers of page combined
+        super.init(contents: page.layers.reduce([], { return $0 + $1.contents }))      // all layers of page combined
         moveOriginTo(CGPoint(x: 0, y: 0))
-    }
-
-    required convenience init?(pasteboardPropertyList propertyList: AnyObject, ofType type: String) {
-        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
 
     required init?(coder decoder: NSCoder) {
@@ -45,6 +41,10 @@ class GraphicSymbol: GroupGraphic
             self.parametricContext = parametrics
         }
         super.init(coder: decoder)
+    }
+    
+    required convenience init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
+        fatalError("init(pasteboardPropertyList:ofType:) has not been implemented")
     }
     
     override func encode(with coder: NSCoder) {
@@ -64,12 +64,12 @@ class GraphicSymbol: GroupGraphic
         return super.defaultInspectionKey
     }
     
-    override func value(forUndefinedKey key: String) -> AnyObject? {
+    override func value(forUndefinedKey key: String) -> Any? {
         return parametricContext.value(forUndefinedKey: key)
     }
     
-    override func setValue(_ value: AnyObject?, forUndefinedKey key: String) {
-        parametricContext.setValue(value, forUndefinedKey: key)
+    override func setValue(_ value: Any?, forUndefinedKey key: String) {
+        parametricContext.setValue(value, forKey: key)
     }
     
     override func unlink() {

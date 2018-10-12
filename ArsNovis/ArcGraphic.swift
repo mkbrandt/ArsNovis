@@ -203,7 +203,7 @@ class ArcGraphic: Graphic
         } else if let line = g as? LineGraphic {
             return intersectionsWithLine(line, extendSelf: extendSelf, extendOther: extendOther)
         } else if let rect = g as? RectGraphic {
-            return rect.sides.reduce([], combine: {$0 + intersectionsWithLine($1, extendSelf: extendSelf, extendOther: extendOther)})
+            return rect.sides.reduce([], {$0 + intersectionsWithLine($1, extendSelf: extendSelf, extendOther: extendOther)})
         }
         return []
     }
@@ -315,7 +315,7 @@ class ArcGraphic: Graphic
     
     override func addReshapeSnapConstructionsAtPoint(_ point: CGPoint, toView: DrawingView) {
         let circle = ElipseGraphic(origin: origin - CGPoint(x: radius, y: radius), size: CGSize(width: radius * 2, height: radius * 2))
-        circle.lineColor = NSColor.blue().withAlphaComponent(0.5)
+        circle.lineColor = NSColor.blue.withAlphaComponent(0.5)
         circle.lineWidth = 0.0
         circle.ref = [self]
         toView.addSnapConstructions([circle])
@@ -348,7 +348,7 @@ class Arc3PtTool: GraphicTool
     }
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshair()
+        return NSCursor.crosshair
     }
     
     override func selectTool(_ view: DrawingView) {
@@ -425,7 +425,7 @@ class ArcCenterTool: GraphicTool
     var clockwise = false
     
     override func cursor() -> NSCursor {
-        return NSCursor.crosshair()
+        return NSCursor.crosshair
     }
     
     override func selectTool(_ view: DrawingView) {
@@ -488,7 +488,7 @@ class ArcCenterTool: GraphicTool
                 radius = line.length
                 startAngle = line.angle
                 view.construction = ArcGraphic(origin: origin, radius: radius, startAngle: startAngle, endAngle: startAngle, clockwise: clockwise)
-                print("construction = \(view.construction)")
+                print("construction = \(String(describing: view.construction))")
             }
             view.setDrawingHint("Arc from center: Set end angle")
         default:

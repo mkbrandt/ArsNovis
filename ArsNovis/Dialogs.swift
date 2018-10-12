@@ -30,12 +30,12 @@ class NewPageDialog: NSWindow
     }
     
     @IBAction func ok(_ sender: AnyObject?) {
-        sheetParent?.endSheet(self, returnCode: NSModalResponseOK)
+        sheetParent?.endSheet(self, returnCode: NSApplication.ModalResponse.OK)
         orderOut(self)
     }
     
     @IBAction func cancel(_ sender: AnyObject?) {
-        sheetParent?.endSheet(self, returnCode: NSModalResponseCancel)
+        sheetParent?.endSheet(self, returnCode: NSApplication.ModalResponse.cancel)
         orderOut(self)
     }
 }

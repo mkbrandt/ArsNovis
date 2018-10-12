@@ -11,7 +11,7 @@ import Cocoa
 class TextGraphic: Graphic, NSTextFieldDelegate
 {
     var angle: CGFloat
-    var text: NSString = "Text"
+    var text: String = "Text"
     var fontName: String = applicationDefaults.textFontName
     var fontSize: CGFloat = applicationDefaults.textFontSize
 
@@ -24,13 +24,15 @@ class TextGraphic: Graphic, NSTextFieldDelegate
         set { fontName = newValue.fontName; fontSize = newValue.pointSize }
     }
     
-    var fontAttributes: [String: AnyObject]     { return [NSFontAttributeName: font, NSFontSizeAttribute: fontSize, NSForegroundColorAttributeName: lineColor] }
+    var fontAttributes: [NSAttributedStringKey: Any] {
+        return [NSAttributedStringKey.font: font, NSAttributedStringKey(rawValue: kCTFontSizeAttribute as String as String): fontSize, NSAttributedStringKey.foregroundColor: lineColor]
+    }
     
     override var bounds: CGRect                 { return renderedBounds ?? CGRect(origin: origin, size: CGSize(width: 100, height: 100)) }
     override var selected: Bool {
         didSet {
-            NSFontManager.shared().setSelectedFont(font, isMultiple: false)
-            NSFontManager.shared().setSelectedAttributes([NSForegroundColorAttributeName: lineColor], isMultiple: false)
+            NSFontManager.shared.setSelectedFont(font, isMultiple: false)
+            NSFontManager.shared.setSelectedAttributes([kCTForegroundColorAttributeName as String: lineColor], isMultiple: false)
         }
     }
 
